@@ -28,13 +28,19 @@
 | 原始财报 PDF（34 份，207 MB） | `data/pdfs/` | ❌ 可一键复现 |
 | 切块知识库 / 检索索引 / 向量模型 | `data/chunks`、`data/index`、`data/model` | ❌ 可一键复现 |
 
+**代码仓库**：本目录即代码仓库（已 `git init`，37 个文件纳入版本管理）。
+`.gitignore` 排除了 207 MB 的 PDF 原件与索引（可由 `run_all.sh` 复现），
+仓库体积仅 4.2 MB。若课程要求**单独提交代码**，用 `--code-only` 出纯源码包。
+
 **重新生成交付物：**
 
 ```bash
 V=~/.workbuddy/binaries/python/envs/default/bin
-$V/python code/make_report.py    # Markdown → output/*.pdf（Chrome 无头打印）
-$V/python code/package.py        # 打 dist/作业3A_交付包_<日期>.zip
-$V/python code/package.py --with-data   # 额外打一份含 207 MB PDF 原件的数据包
+$V/python code/make_report.py            # Markdown → output/*.pdf（Chrome 无头打印）
+$V/python code/package.py                # 交付包 + 代码仓库包
+$V/python code/package.py --code-only    # 只打纯代码仓库包（约 60 KB，19 文件）
+$V/python code/package.py --date 20260924  # 指定包名日期（默认今天）
+$V/python code/package.py --with-data    # 额外打含 207 MB PDF 原件的数据包
 ```
 
 ---
@@ -65,7 +71,9 @@ homework3/
 ├── web/                      问答页面前端
 ├── output/                   正式报告 PDF、评测台账、一页结论、工作流程说明
 ├── shots/                    页面截图（9 张）
-└── dist/                     交付包（作业3A_交付包_<日期>.zip）—— 提交这个
+└── dist/                     交付包 —— 提交这个
+    ├── 作业3A_交付包_<日期>.zip      4.0 MB（报告+台账+截图+代码+manifest）
+    └── 作业3A_代码仓库_<日期>.zip    60 KB（纯源码，课程若单独要代码交这个）
 ```
 
 > `data/model/`、`data/index/`、`data/pdfs/` 体积大且可复现，交付包里不含。

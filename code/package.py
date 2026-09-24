@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """打包作业交付物。
 
-默认打「轻量交付包」——只含老师真正要看的东西（报告 / 评测台账 / 截图 /
-代码 / 下载清单），把几百 MB 的 PDF 原件与索引留在本地（可由 01_download.py
-+ manifest.json 一键复现）。
+默认打「交付包」——含报告 PDF / 评测台账 / 截图 / 代码 / 下载清单，
+把几百 MB 的 PDF 原件与索引留在本地（可由 01_download.py + manifest.json 复现）。
 
-    python code/package.py            # 轻量包（约 10 MB）
-    python code/package.py --with-data # 连原始 PDF 一起打（约 210 MB，慢）
+    python code/package.py             # 交付包（约 4 MB）
+    python code/package.py --code-only # 只打纯代码仓库包（约 150 KB）
+    python code/package.py --with-data # 额外打含原始 PDF 的数据包（约 210 MB，慢）
+    python code/package.py --date 20260924   # 指定包名日期（默认今天）
 
 产物落在 dist/ 下。
 """
@@ -122,11 +123,55 @@ python code/package.py --with-data      # 额外产出 dist/作业3A_数据原�
 """
 
 
-def zipdir(zf: zipfile.ZipFile, sub: str) -> int:
+CODE_INTRO = """# 代码仓库说明
+
+「作业 3-A：快递物流行业财报问答知识库」的**源代码仓库**。
+
+## 目录结构
+
+```
+code/                     流水线脚本
+  ├── 01_download.py      ① 多源下载年报/半年报全文（深交所 / 巨潮 / 港交所）
+  ├── 02_extract_chunk.py ② 提取文字 + 表格按行列还原 + 切块（带 公司/章节/页码）
+  ├── 03_build_index.py   ③ 建 BM25 + 向量双索引（jieba 缺失自动降级，不中断）
+  ├── 04_ask.py           ④ 混合检索（RRF + 分组召回）+ 抽取式带出处答案
+  ├── 05_eval.py          ⑤ 10 题 × 4 种检索模式逐题评测
+  ├── embedder.py         BGE-small-zh-v1.5 ONNX 编码器（CPU，不依赖 torch）
+  ├── app.py              Flask 问答页面后端
+  ├── make_report.py      Markdown → PDF 报告（Chrome 无头打印）
+  ├── package.py          打交付包
+  ├── bootstrap_deps.sh   依赖自检 + 补装（含 jieba/zhconv 的 sdist 兜底）
+  └── shot.sh             Chrome 无头截图
+web/index.html            问答页面前端
+run_all.sh                一键跑完 7 步（幂等、断点续跑）
+README.md                 完整说明：设计决策、评测结果、已知限制
+```
+
+## 怎么跑
+
+```bash
+zsh code/bootstrap_deps.sh    # 装依赖
+zsh run_all.sh                # 下载 → 提取 → 建索引 → 评测 → 截图 → 出报告 → 打包
+```
+
+数据（34 份财报 PDF / 切块 / 索引 / 向量模型）体积大，不在本仓库内；
+首次运行 `run_all.sh` 会自动下载与重建，来源 URL 与 SHA1 见交付包里的
+`data/manifest.json`。
+
+## 依赖
+
+- **必需**：`pymupdf` `numpy` `onnxruntime` `tokenizers` `requests` `bs4`
+  `lxml` `tqdm` `flask` `zhconv`
+- **可选**（缺失有降级方案）：`jieba`（分词 → 内置二元切分）· `rank_bm25`
+  （→ 自实现 BM25）· `scikit-learn` · `openpyxl`
+"""
+
+
+def zipdir(zf: zipfile.ZipFile, sub: str, skip: tuple[str, ...] = ()) -> int:
     n = 0
     base = os.path.join(ROOT, sub)
     for dirpath, dirs, files in os.walk(base):
-        dirs[:] = [d for d in dirs if d != "__pycache__"]
+        dirs[:] = [d for d in dirs if d != "__pycache__" and d not in skip]
         for f in files:
             if f.startswith(".") or f.endswith(".log"):
                 continue
@@ -164,15 +209,51 @@ def build(name: str, extra_dirs: list[str], intro: str) -> str:
     return out
 
 
+def build_code(name: str) -> str:
+    """纯代码仓库包 —— 只含源码，不含报告/数据/截图。
+
+    目录结构与本地仓库一致（code/ + web/ + README + run_all.sh + .gitignore），
+    解压即是可运行的代码仓库。
+    """
+    os.makedirs(DIST, exist_ok=True)
+    out = os.path.join(DIST, name)
+    if os.path.exists(out):
+        os.remove(out)
+    n = 0
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
+        zf.writestr("代码仓库说明.md", CODE_INTRO)
+        n += 1
+        for rel in ("README.md", "run_all.sh", ".gitignore"):
+            full = os.path.join(ROOT, rel)
+            if os.path.exists(full):
+                zf.write(full, rel)
+                n += 1
+        n += zipdir(zf, "code", skip=("legacy",))   # legacy/ 是废弃脚本
+        n += zipdir(zf, "web")
+    mb = os.path.getsize(out) / 1048576
+    print(f"  → {os.path.relpath(out, ROOT)}   {n} 个文件   {mb:.2f} MB")
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--with-data", action="store_true",
                     help="额外打一份含原始 PDF 的数据包")
+    ap.add_argument("--code-only", action="store_true",
+                    help="只打纯代码仓库包（不打交付包）")
+    ap.add_argument("--date", default=None,
+                    help="包名日期 YYYYMMDD（默认今天）")
     a = ap.parse_args()
 
-    day = dt.date.today().strftime("%Y%m%d")
-    print("打包交付物 ...")
+    day = a.date or dt.date.today().strftime("%Y%m%d")
+    print("打包 ...")
+    if a.code_only:
+        code = build_code(f"作业3A_代码仓库_{day}.zip")
+        print(f"\n代码仓库包：{os.path.relpath(code, ROOT)}")
+        return 0
+
     light = build(f"作业3A_交付包_{day}.zip", [], INTRO)
+    build_code(f"作业3A_代码仓库_{day}.zip")
     if a.with_data:
         data_intro = ("# 数据原件（34 份财报 PDF）\n\n"
                       "配合轻量交付包使用。来源 URL 与 SHA1 见 "
@@ -182,7 +263,7 @@ def main() -> int:
     total = sum(os.path.getsize(os.path.join(DIST, f))
                 for f in os.listdir(DIST)) / 1048576
     print(f"\ndist/ 合计 {total:.1f} MB")
-    print(f"轻量包：{os.path.relpath(light, ROOT)}")
+    print(f"交付包：{os.path.relpath(light, ROOT)}")
     return 0
 
 
