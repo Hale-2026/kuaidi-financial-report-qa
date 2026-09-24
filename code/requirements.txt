@@ -1,0 +1,24 @@
+# 作业3-A 快递物流财报问答知识库 —— 依赖
+# 安装：pip install -r requirements.txt
+#
+# 说明：本机 Python 3.13.12 下 pip 解包 jieba / zhconv 的 sdist 会报
+#       「EEXIST: file already exists, mkdir ...」；这两个包是纯 Python，
+#       可手工 `tar -xzf` 后拷进 site-packages（详见 README 的「环境搭建」）。
+#       其余包正常 pip 安装。
+
+pymupdf>=1.24          # PDF 文字 + 表格（find_tables）提取
+pdfplumber>=0.11       # 表格提取备用通道
+jieba>=0.42.1          # 中文分词（BM25 用）
+rank_bm25>=0.2.2       # BM25Okapi
+numpy>=1.26            # 向量运算
+pandas>=2.2            # 统计与导出
+scikit-learn>=1.4      # 兜底向量方案 TF-IDF + SVD
+onnxruntime>=1.17      # BGE-small-zh ONNX CPU 推理
+tokenizers>=0.15       # 直接读 tokenizer.json，免装 transformers
+zhconv>=1.4.3          # 港股财报繁体转简体
+flask>=3.0             # 问答页面
+requests>=2.31         # 财报下载
+beautifulsoup4>=4.12   # 公告页面兜底解析
+lxml>=5.0
+tqdm>=4.66
+openpyxl>=3.1

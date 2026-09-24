@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>快递物流财报问答 · 混合检索 RAG</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --card:#fff; --line:#e3e6ec; --line2:#eef0f4;
+    --ink:#16181d; --ink2:#4a5160; --ink3:#8b93a3;
+    --accent:#2c5bd8; --accent-bg:#eef3ff; --accent-line:#c9d8fb;
+    --up:#c62828; --down:#12793f;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:14px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1120px;margin:0 auto;padding:26px 22px 60px}
+
+  header h1{margin:0 0 4px;font-size:21px;letter-spacing:-.3px}
+  header .sub{color:var(--ink3);font-size:12.5px}
+  header .sub b{color:var(--ink2);font-weight:600}
+  .stats{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0 18px;font-size:12px;color:var(--ink3)}
+  .stats span b{color:var(--ink);font-family:var(--mono);font-weight:600}
+
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:16px 18px;box-shadow:0 1px 2px rgba(16,24,40,.03)}
+  .askrow{display:flex;gap:9px}
+  #q{flex:1;padding:11px 13px;border:1px solid var(--line);border-radius:9px;
+    font-size:14px;font-family:inherit;background:#fcfcfd;transition:.14s}
+  #q:focus{outline:none;border-color:var(--accent);background:#fff;
+    box-shadow:0 0 0 3px rgba(44,91,216,.1)}
+  button{font-family:inherit;font-size:13.5px;cursor:pointer;border-radius:9px;
+    border:1px solid var(--line);background:#fff;color:var(--ink2);padding:10px 16px;
+    transition:.14s}
+  button:hover{border-color:var(--accent-line);color:var(--accent)}
+  #go{background:var(--accent);border-color:var(--accent);color:#fff;
+    font-weight:600;padding:11px 26px}
+  #go:hover{background:#1e49b8}
+  #go:disabled{opacity:.5;cursor:default}
+
+  .filters{display:flex;gap:22px;flex-wrap:wrap;margin-top:14px;
+    padding-top:14px;border-top:1px dashed var(--line)}
+  .fgroup{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .fgroup>label{font-size:12px;color:var(--ink3);font-weight:600;
+    letter-spacing:.3px;white-space:nowrap}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{padding:4px 11px;border:1px solid var(--line);border-radius:99px;
+    background:#fff;font-size:12.5px;color:var(--ink2);cursor:pointer;
+    user-select:none;transition:.12s}
+  .chip:hover{border-color:var(--accent-line)}
+  .chip.on{background:var(--accent-bg);border-color:var(--accent-line);
+    color:var(--accent);font-weight:600}
+  .ex{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+  .ex span{font-size:12px;color:var(--ink3);border-bottom:1px dashed var(--line2);
+    cursor:pointer;padding-bottom:1px}
+  .ex span:hover{color:var(--accent);border-color:var(--accent-line)}
+
+  h2.sec{font-size:13px;color:var(--ink3);font-weight:700;letter-spacing:.6px;
+    margin:26px 0 10px;text-transform:uppercase}
+  h2.sec em{font-style:normal;color:var(--ink);letter-spacing:0;
+    text-transform:none;font-size:14px}
+
+  .ansbody{padding:15px 18px;background:#fbfcfe;border:1px solid var(--line);
+    border-left:3px solid var(--accent);border-radius:9px;margin-bottom:14px;
+    font-size:14.5px;white-space:pre-wrap}
+  .sel{background:var(--accent-bg);border-radius:3px;padding:0 2px}
+  ul.bl{list-style:none;margin:0;padding:0}
+  ul.bl li{display:flex;gap:11px;padding:9px 0;border-bottom:1px solid var(--line2);
+    font-size:13.5px;color:var(--ink2)}
+  ul.bl li:last-child{border-bottom:none}
+  .num{flex:0 0 22px;height:22px;line-height:22px;text-align:center;
+    background:var(--accent-bg);color:var(--accent);border-radius:6px;
+    font-size:11.5px;font-weight:700;font-family:var(--mono)}
+  .num.warn{background:#fdf1f1;color:var(--up)}
+  .v{font-family:var(--mono);font-weight:600;color:var(--ink)}
+  .cite{color:var(--ink3);font-size:11.5px;display:block;margin-top:3px}
+
+  .hit{background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:13px 15px;margin-bottom:10px}
+  .hit .hd{display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+    margin-bottom:8px;font-size:12.5px}
+  .rk{font-family:var(--mono);font-weight:700;color:#fff;background:#9aa3b2;
+    width:23px;height:23px;line-height:23px;text-align:center;border-radius:6px;
+    font-size:11.5px;flex:0 0 auto}
+  .co{font-weight:700;color:var(--ink)}
+  .tag{padding:1.5px 8px;border-radius:5px;background:#f2f4f8;color:var(--ink2);
+    font-size:11.5px}
+  .tag.t{background:#fff4e5;color:#b26a00}
+  .tag.hk{background:#eaf7ef;color:#12793f}
+  .sc{margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--ink3)}
+  .sc b{color:var(--accent)}
+  .ctx{font-size:12.5px;color:var(--ink2);white-space:pre-wrap;
+    max-height:150px;overflow:auto;background:#fbfcfd;border:1px solid var(--line2);
+    border-radius:7px;padding:9px 11px;line-height:1.6}
+  .ctx table{border-collapse:collapse;font-family:var(--mono);font-size:11.5px}
+  .ctx td{border:1px solid var(--line2);padding:2px 7px;white-space:nowrap}
+  .ctx tr:first-child td{background:#f2f5fc;font-weight:600}
+  .more{font-size:12px;color:var(--accent);cursor:pointer;margin-top:6px;
+    display:inline-block}
+  .empty{color:var(--ink3);font-size:13px;padding:30px 0;text-align:center}
+  .spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.45);
+    border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;
+    vertical-align:-2px;margin-right:6px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .note{font-size:12px;color:var(--ink3);margin-top:10px;line-height:1.7}
+  .note code{background:#f2f4f8;padding:1px 5px;border-radius:4px;
+    font-family:var(--mono);font-size:11.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>快递物流财报问答</h1>
+    <div class="sub">
+      数据源：<b>港交所披露易</b> / <b>深交所官网</b> / <b>巨潮资讯网（证监会指定披露平台）</b>
+      · 2025 年年度报告 + 2026 年半年度报告全文
+    </div>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <div class="panel">
+    <div class="askrow">
+      <input id="q" placeholder="例：顺丰控股 2026 年上半年单票收入是多少？/ 各家快递公司毛利率谁最高？" autocomplete="off">
+      <button id="go">提问</button>
+    </div>
+
+    <div class="filters">
+      <div class="fgroup">
+        <label>检索模式</label>
+        <div class="chips" id="modes">
+          <div class="chip on" data-m="hybrid">混合 BM25+向量</div>
+          <div class="chip" data-m="bm25">仅 BM25</div>
+          <div class="chip" data-m="vector">仅向量</div>
+          <div class="chip" data-m="cover">分组召回（跨公司题）</div>
+        </div>
+      </div>
+      <div class="fgroup">
+        <label>报告</label>
+        <div class="chips" id="kinds">
+          <div class="chip on" data-k="2025年年度报告">2025 年报</div>
+          <div class="chip on" data-k="2026年半年度报告">2026 半年报</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fgroup" style="margin-top:14px">
+      <label>公司</label>
+      <div class="chips" id="cos"><div class="chip on" data-c="__all__">全部</div></div>
+    </div>
+
+    <div class="ex" id="ex"></div>
+  </div>
+
+  <div id="out"></div>
+
+  <div class="note">
+    答案生成方式：<b>抽取式</b>（从召回块中按查询词权重与数字命中挑句子，逐句挂出处），
+    不引入大模型 —— 检索失败不会被生成模型「圆过去」，便于逐题定位召回问题。
+    出处标注格式：<code>公司·报告·章节·页码</code>。
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const state = {mode:'hybrid', cos:new Set(), kinds:new Set(
+  ['2025年年度报告','2026年半年度报告']), topk:6};
+
+const EXAMPLES = [
+  '顺丰控股2026年上半年的营业收入和归母净利润是多少？',
+  '各家快递公司2026年上半年毛利率对比',
+  '中通快递和顺丰控股的单票收入差距有多大？',
+  '哪家公司2026年上半年经营活动现金流量净额最高？',
+  '韵达股份在2026年半年报中如何解释业务量变化？',
+  '快递行业价格战在2026年上半年有何体现？',
+  '几家公司2025年的研发投入分别是多少？',
+  '极兔速递2026年上半年的经营情况如何？'
+];
+
+function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+function mdTable(t){
+  const lines = t.split('\n');
+  if(lines.length<2 || !lines[0].trim().startsWith('|')) return null;
+  let h='<table>';
+  lines.forEach((l,i)=>{
+    if(/^\|[\s\-|]+\|$/.test(l.trim())) return;
+    const cells=l.trim().replace(/^\||\|$/g,'').split('|').map(c=>c.trim());
+    h+='<tr>'+cells.map(c=>`<td>${esc(c)}</td>`).join('')+'</tr>';
+  });
+  return h+'</table>';
+}
+
+function renderCtx(txt){
+  const t = mdTable(txt.replace('[TABLE]\n',''));
+  if(t) return t;
+  return esc(txt).replace(/\n/g,'<br>');
+}
+
+function highlight(txt, q){
+  const qs=(q.match(/[\u4e00-\u9fa5A-Za-z0-9]+/g)||[])
+    .filter(w=>w.length>1).sort((a,b)=>b.length-a.length);
+  let out=esc(txt);
+  qs.forEach(w=>{
+    out=out.replace(new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'),
+      m=>`<span class="sel">${m}</span>`);
+  });
+  return out;
+}
+
+const NUMRE = /(\d[\d,]*\.?\d*\s*(?:%|％|亿元|万元|亿|万|元|件|票|吨|个|家))/g;
+function highlightNum(txt){
+  return esc(txt).replace(NUMRE,'<span class="v">$1</span>');
+}
+
+async function loadMeta(){
+  const m = await (await fetch('/api/meta')).json();
+  window.__meta = m;
+  $('#stats').innerHTML =
+    `<span>覆盖公司 <b>${m.companies.length}</b> 家</span>
+     <span>财报 <b>${m.index.reports.length}</b> 份</span>
+     <span>知识块 <b>${m.n_chunks.toLocaleString()}</b></span>
+     <span>向量模型 <b>${esc(m.index.embedder)}</b>（${m.index.embed_dim} 维）</span>
+     <span>BM25 <b>${esc(m.index.bm25)}</b></span>
+     <span>分词 <b>${esc(m.index.tokenizer)}</b></span>`;
+  const box = $('#cos');
+  m.companies.forEach(c=>{
+    const d=document.createElement('div');
+    d.className='chip'; d.dataset.c=c; d.textContent=c;
+    box.appendChild(d);
+  });
+  $('#ex').innerHTML = EXAMPLES.map(e=>`<span>${esc(e)}</span>`).join('');
+  document.querySelectorAll('#ex span').forEach(s=>{
+    s.onclick=()=>{$('#q').value=s.textContent; ask();};
+  });
+}
+
+document.addEventListener('click', e=>{
+  const c=e.target.closest('.chip'); if(!c) return;
+  if(c.dataset.m){
+    document.querySelectorAll('#modes .chip').forEach(x=>x.classList.remove('on'));
+    c.classList.add('on'); state.mode=c.dataset.m; return;
+  }
+  if(c.dataset.k){
+    const k=c.dataset.k;
+    if(state.kinds.has(k)) state.kinds.delete(k); else state.kinds.add(k);
+    c.classList.toggle('on'); return;
+  }
+  if(c.dataset.c){
+    const v=c.dataset.c;
+    if(v==='__all__'){
+      state.cos.clear();
+      document.querySelectorAll('#cos .chip').forEach(x=>
+        x.classList.toggle('on', x.dataset.c==='__all__'));
+      return;
+    }
+    if(state.cos.has(v)) state.cos.delete(v); else state.cos.add(v);
+    c.classList.toggle('on');
+    document.querySelector('#cos .chip').classList
+      .toggle('on', state.cos.size===0);
+  }
+});
+
+$('#go').onclick = ask;
+$('#q').addEventListener('keydown', e=>{ if(e.key==='Enter') ask(); });
+
+async function ask(){
+  const q = $('#q').value.trim();
+  if(!q){ $('#q').focus(); return; }
+  const btn=$('#go'); btn.disabled=true; btn.innerHTML='<span class="spin"></span>检索中';
+  $('#out').innerHTML='';
+  try{
+    const body={q, mode:state.mode, topk:state.topk,
+      kinds:[...state.kinds], companies:[...state.cos]};
+    const r = await (await fetch('/api/ask',
+      {method:'POST',headers:{'Content-Type':'application/json'},
+       body:JSON.stringify(body)})).json();
+    render(r, q);
+  }catch(err){
+    $('#out').innerHTML=`<div class="empty">请求失败：${esc(err.message)}</div>`;
+  }finally{
+    btn.disabled=false; btn.textContent='提问';
+  }
+}
+
+function render(r,q){
+  if(r.error){ $('#out').innerHTML=`<div class="empty">${esc(r.error)}</div>`; return; }
+  const modeName={hybrid:'混合检索',bm25:'仅 BM25',vector:'仅向量',cover:'分组召回'}[r.mode]||r.mode;
+  let h = `<h2 class="sec">答案 <em>· ${modeName} · ${esc(r.engine)}</em></h2>`;
+  h += `<div class="panel"><div class="ansbody">${highlightNum(r.answer)}</div>`;
+  if(r.bullets && r.bullets.length){
+    h += '<ul class="bl">';
+    r.bullets.forEach(b=>{
+      h += `<li><div class="num${b.has_number?'':' warn'}">${b.n}</div>
+        <div>${highlightNum(b.text)}<span class="cite">↳ ${esc(b.cite)}</span></div></li>`;
+    });
+    h += '</ul>';
+  }
+  h += '</div>';
+
+  h += `<h2 class="sec">出处 <em>· ${r.citations.length} 处</em></h2><div class="panel">`;
+  r.citations.forEach(c=>{
+    h += `<div style="padding:7px 0;border-bottom:1px solid var(--line2);font-size:13px">
+      <span class="num" style="display:inline-block;vertical-align:-5px">${c.n}</span>
+      <b>${esc(c.company)}</b> · ${esc(c.kind)} · ${esc(c.section)} · 
+      <span class="tag">第 ${c.page} 页</span>
+      ${c.has_table?'<span class="tag t">含表格</span>':''}
+      <span class="cite" style="display:inline;margin-left:8px">${esc(c.chunk_id)}</span>
+    </div>`;
+  });
+  h += '</div>';
+
+  h += `<h2 class="sec">召回明细 <em>· 共 ${r.hits.length} 块（供逐题核查）</em></h2>`;
+  r.hits.forEach((x,i)=>{
+    const ctx = x.has_table? renderCtx(x.text) : esc(x.text).replace(/\n/g,'<br>');
+    const long = x.text.length>700;
+    h += `<div class="hit">
+      <div class="hd">
+        <div class="rk">${i+1}</div>
+        <span class="co">${esc(x.company)}</span>
+        <span class="tag">${esc(x.kind)}</span>
+        <span class="tag${x.exchange==='HKEX'?' hk':''}">${x.exchange==='HKEX'?'港股':'A股'}</span>
+        <span class="tag">${esc(x.section)}</span>
+        <span class="tag">P${x.page_start}${x.page_end!==x.page_start?'-'+x.page_end:''}</span>
+        ${x.has_table?'<span class="tag t">表格</span>':''}
+        <span class="sc">RRF <b>${x.score.toFixed(5)}</b>
+          · BM25 #${x.rank_bm25??'—'} · 向量 #${x.rank_vector??'—'}</span>
+      </div>
+      <div class="ctx" id="ctx${i}">${ctx}</div>
+      ${long?`<span class="more" onclick="var e=document.getElementById('ctx${i}');e.style.maxHeight=e.style.maxHeight?'':'none';this.textContent=e.style.maxHeight?'展开全部':'收起'">展开全部</span>`:''}
+    </div>`;
+  });
+  $('#out').innerHTML = h;
+}
+
+// 预设场景：既给无头浏览器截图用，也给人工演示用
+//   访问 /?qi=2&mode=hybrid   直接定位到第 3 个场景并自动提问
+//   访问 /?qi=-1              只截图首页（加载完统计信息即可）
+const SCENES = [
+  {name:'01_首页_混合检索_跨公司全景题',
+   q:'2026年上半年 顺丰控股 圆通速递 韵达股份 申通快递 的营业收入分别是多少？谁最高？',
+   mode:'hybrid', kinds:['2026年半年度报告']},
+  {name:'02_答案与出处_单公司数值题',
+   q:'顺丰控股2026年上半年的营业收入和归母净利润是多少？',
+   mode:'hybrid', kinds:['2026年半年度报告']},
+  {name:'03_跨市场对比_单票收入',
+   q:'中通快递和顺丰控股的单票收入分别是多少？差距多大？',
+   mode:'hybrid', kinds:['2026年半年度报告']},
+  {name:'04_仅BM25召回对比',
+   q:'各家快递公司2026年上半年的毛利率对比',
+   mode:'bm25', kinds:['2026年半年度报告']},
+  {name:'05_仅向量召回对比',
+   q:'快递行业价格战在2026年上半年有什么体现？',
+   mode:'vector', kinds:['2026年半年度报告']},
+  {name:'06_表格类问题_经营活动现金流',
+   q:'哪家公司2026年上半年经营活动产生的现金流量净额最高？',
+   mode:'hybrid', kinds:['2026年半年度报告']},
+  {name:'07_分组召回_跨公司全景题_改进后',
+   q:'2026年上半年 顺丰控股 圆通速递 韵达股份 申通快递 的营业收入分别是多少？谁最高？',
+   mode:'cover', kinds:['2026年半年度报告']},
+  {name:'08_分组召回_跨市场口径对比_改进后',
+   q:'中通快递和顺丰控股的单票收入分别是多少？差距多大？',
+   mode:'cover', kinds:['2026年半年度报告']},
+];
+
+function setMode(m){
+  const c=document.querySelector(`#modes .chip[data-m="${m}"]`);
+  if(!c) return;
+  document.querySelectorAll('#modes .chip').forEach(x=>x.classList.remove('on'));
+  c.classList.add('on'); state.mode=m;
+}
+
+async function boot(){
+  await loadMeta();
+  const p = new URLSearchParams(location.search);
+  if(p.get('mode')) setMode(p.get('mode'));
+  const qi = p.get('qi');
+  if(qi===null || qi===''){ document.body.dataset.ready='1'; return; }
+  const i = parseInt(qi,10);
+  if(i>=0 && i<SCENES.length){
+    setMode(p.get('mode') || SCENES[i].mode || 'hybrid');
+    // 场景可指定报告类型：否则页面默认「年报+半年报」都勾选，
+    // 问「2026 上半年」时会把 2025 年报的块也混进答案里。
+    if(SCENES[i].kinds){
+      state.kinds = new Set(SCENES[i].kinds);
+      document.querySelectorAll('#kinds .chip')
+        .forEach(c=>c.classList.toggle('on', state.kinds.has(c.dataset.k)));
+    }
+    $('#q').value = SCENES[i].q;
+    await ask();
+  }
+  document.body.dataset.ready='1';
+}
+boot();
+</script>
+</body>
+</html>
