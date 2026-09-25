@@ -466,7 +466,9 @@ def main() -> None:
     ap.add_argument("query")
     ap.add_argument("-k", "--topk", type=int, default=6)
     ap.add_argument("--mode", default="hybrid",
-                    choices=["hybrid", "bm25", "vector"])
+                    choices=["hybrid", "bm25", "vector", "cover", "hybrid+cover"],
+                    help="hybrid = BM25 + 向量 RRF 融合（默认）；bm25 / vector = 单路检索；"
+                         "cover = 按公司分组召回（跨公司全景题专用，见 README 第 5 节）")
     ap.add_argument("--company", action="append")
     ap.add_argument("--kind", action="append")
     a = ap.parse_args()

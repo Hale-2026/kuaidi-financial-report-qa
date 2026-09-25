@@ -8,15 +8,57 @@
 ---
 
 > **📦 本仓库 = 纯源码。** 按课程要求，仓库只放代码（`code/` + `web/` + `run_all.sh` +
-> 依赖清单 + 下载清单 `data/manifest.json`），**不含**财报 PDF 原件、报告 PDF、
-> 评测台账与页面截图 —— 那些作为作业附件单独提交。
+> 依赖清单 + 下载清单 `data/manifest.json`），**不含**财报 PDF 原件（207 MB）、
+> 报告 PDF、评测台账与页面截图 —— 那些作为作业附件单独提交。
 > 因此仓库里看不到 `data/pdfs` `data/index` `output` `shots` 属正常。
-> 复现方式：① 按第 3 节下半段拉一次向量模型（96 MB，一次性）；
-> ② 跑 `zsh run_all.sh` 重建全部产物（下载 + 提取 + 建索引约 20 分钟，
-> 之后的检索与问答环节全程离线）。
+>
+> **想验证能否跑通 → 直接跳到第 0 节**，三步即可（下载 207 MB 财报 + 提取 + 建索引
+> 约 20 分钟；之后的检索与问答环节全程离线，无需联网）。
+>
+> ⚠️ **仓库自带 `data/manifest.json` 只是「来源凭证」**（记录 34 份报告的
+> 交易所 / URL / SHA1），**不代表 PDF 已下载**。首次运行时 `01_download.py`
+> 会按它逐份比对、把缺失的下载回来。
 >
 > 下文「1. 交付清单」与「2. 目录结构」描述的是**本地跑完后的完整项目**，
 > 用于说明各目录的作用，不等同于本仓库的实际内容。
+
+---
+
+## 0. 三步跑通（评审 / 复现用）
+
+```bash
+# ① 取代码 + 建虚拟环境（venv 必须先建，见第 3 节的说明）
+git clone git@github.com:Hale-2026/kuaidi-financial-report-qa.git
+cd kuaidi-financial-report-qa
+python3 -m venv .venv
+zsh code/bootstrap_deps.sh          # 装依赖 + 功能自检
+
+# ② 拉一次向量模型（96 MB，只需一次；不是 pip 包）
+B=https://hf-mirror.com/Xenova/bge-small-zh-v1.5/resolve/main
+D=data/model/bge-small-zh-v1.5; mkdir -p $D/onnx
+for f in config.json tokenizer.json tokenizer_config.json special_tokens_map.json vocab.txt; do
+  curl -sLo $D/$f $B/$f; done
+curl -sLo $D/onnx/model.onnx $B/onnx/model.onnx
+
+# ③ 跑完整流程（约 20 分钟：下载 207 MB → 提取切块 → 建索引 → 评测）
+zsh run_all.sh
+```
+
+跑完直接提问（命令行版，无需启 Web）：
+
+```bash
+.venv/bin/python code/04_ask.py "顺丰控股和圆通速递2026上半年单票收入对比"
+.venv/bin/python code/04_ask.py --mode cover "各家2026上半年市场份额"   # 分组召回
+```
+
+只想快速试一下问答效果（不重新下载），也可以只跑第 3 步建索引之后直接提问；
+分步命令见第 4 节。
+
+**各步骤预期耗时**（M 系列 Mac，3 并发）：下载 ≈ 3 分钟 · 提取切块 ≈ 8 分钟 ·
+建索引 ≈ 8 分钟（CPU 编码 18,596 块）· 评测 < 1 分钟 · 截图/出报告各 < 1 分钟。
+
+**步骤失败怎么定位**：每一步的日志直接打屏；`run_all.sh` 在缺依赖时**主动中止**
+而不是硬跑（避免白等 20 分钟）。缺向量模型时会直接打印上面第 ② 步的命令。
 
 ## 1. 交付清单
 
@@ -98,17 +140,25 @@ homework3/
 
 ## 3. 环境搭建
 
-**一条命令搞定（推荐）—— 自检 + 补装 + 装完必验：**
+**先建虚拟环境，再补依赖（顺序不能反）：**
 
 ```bash
-cd homework3          # 进入本仓库根目录
-zsh code/bootstrap_deps.sh
+git clone git@github.com:Hale-2026/kuaidi-financial-report-qa.git   # 或进入已下载的目录
+cd kuaidi-financial-report-qa
+
+python3 -m venv .venv            # ← 必须先建：下面两个脚本都会优先用仓库内的 .venv
+zsh code/bootstrap_deps.sh       # 自检 + 补装 + 装完必验
 ```
+
+> **为什么 venv 必须先建**：`bootstrap_deps.sh` 与 `run_all.sh` 找 Python 的顺序都是
+> `$VENV` 环境变量 → **仓库内 `.venv`** → 系统 `python3`。若跳过这一步，
+> 脚本会以「找不到虚拟环境」中止（退出码 1），不会静默改用系统 Python。
+> 想用已有的 conda / 其他 venv，设 `VENV=/path/to/env` 再跑即可。
 
 脚本干三件事：① 常规依赖（有 wheel）直装；② `jieba` / `zhconv` 这类**只有
 sdist** 的包，pip 装不上就自动走「下源码包 → 手工解包 → 拷进 site-packages」；
 ③ 收尾做**功能性自检**（zhconv 要真能把「單票收入與毛利率」转成简体才算过，
-光 import 成功不算）。
+光 import 成功不算；向量模型文件也在此校验）。
 
 手工等价命令：
 
@@ -127,7 +177,8 @@ python3 -m venv .venv
 切分 + 领域词命中**（BM25 照常可用，只是分词精度略降）。
 `rank_bm25`（→ 自实现 BM25）、`sklearn`（→ 仅影响兜底向量）同样各有降级路径。
 真正的**必需依赖**只有：
-`pymupdf / numpy / onnxruntime / tokenizers / requests / bs4 / lxml / tqdm / flask / zhconv`。
+`pymupdf / numpy / onnxruntime / tokenizers / requests / bs4 / lxml / tqdm /
+flask / zhconv / markdown`（完整清单见 `code/requirements.txt`）。
 
 **向量模型：** 从 hf-mirror 拉 BGE-small-zh-v1.5 的 ONNX 版（96 MB，CPU 推理，
 不依赖 torch，避免装 2 GB 的深度学习栈）：

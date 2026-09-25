@@ -16,11 +16,30 @@ import subprocess
 import sys
 import tempfile
 
-import markdown
+try:
+    import markdown
+except ImportError:                                              # noqa: BLE001
+    sys.exit("!! 缺 markdown 库（用于 Markdown → HTML 转换）。\n"
+             "   装（在项目 venv 里）：pip install markdown\n"
+             "   或一键：zsh code/bootstrap_deps.sh —— 它会自动补装\n"
+             "   （markdown 已列在 code/requirements.txt 的必需依赖里）")
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "output")
-CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+
+# Chrome/Chromium 常见安装位置 —— 不写死单一路径，换浏览器或换系统也能找到
+CHROME_CANDS = [
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary",
+    "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+    "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+    "/usr/bin/google-chrome",
+    "/usr/bin/chromium",
+    "/usr/bin/chromium-browser",
+]
+CHROME = next((p for p in CHROME_CANDS if os.path.exists(p)),
+              CHROME_CANDS[0])
 
 CSS = """
 @page { size: A4; margin: 17mm 15mm 16mm; }
@@ -136,10 +155,20 @@ def build(parts: list[tuple[str, str]], out_name: str, cover: str = "") -> None:
 
 def main() -> int:
     if not os.path.exists(CHROME):
-        print("找不到 Chrome，无法生成 PDF")
+        print("!! 找不到 Chrome / Edge / Chromium，无法把 Markdown 打印成 PDF。")
+        print("   已查找这些位置：")
+        for p in CHROME_CANDS:
+            print(f"     {p}")
+        print("   装任一即可；这一步只影响 PDF 生成，"
+              "前面 1–5 步（下载/提取/建索引/问答/评测）不受影响。")
         return 1
     print("生成 PDF 报告 ...")
-    build([("一页结论.md", None)], "一页结论.pdf")
+    if os.path.exists(os.path.join(OUT, "一页结论.md")):
+        build([("一页结论.md", None)], "一页结论.pdf")
+    else:
+        print("  跳过 一页结论.pdf —— output/一页结论.md 不存在")
+        print("  （该文件是人工撰写的结论文本，未纳入代码仓库；"
+              "跑完 05_eval.py 后可参照 output/eval_table.md 自拟）")
     build([("一页结论.md", TITLES["一页结论.md"]),
            ("eval_table.md", TITLES["eval_table.md"])],
           "作业3A_报告.pdf", cover=COVER)

@@ -10,8 +10,9 @@ app.py —— 作业3-A 问答页面（Flask）
 接口：
   GET  /               问答页面
   GET  /api/meta       可选公司 / 报告类型 / 索引统计
-  POST /api/ask        {"q": "...", "mode": "hybrid|bm25|vector",
+  POST /api/ask        {"q": "...", "mode": "hybrid|bm25|vector|cover",
                         "topk": 6, "companies": [...], "kinds": [...]}
+                       mode=cover 为按公司分组召回（跨公司全景题专用）
 """
 from __future__ import annotations
 

@@ -63,8 +63,8 @@ def has(m):
     except Exception:                                             # noqa: BLE001
         return False
 
-req = ["fitz", "numpy", "onnxruntime", "tokenizers",
-       "requests", "bs4", "lxml", "tqdm", "flask", "zhconv"]
+req = ["pymupdf", "numpy", "onnxruntime", "tokenizers",
+       "requests", "bs4", "lxml", "tqdm", "flask", "zhconv", "markdown"]
 opt = ["jieba", "rank_bm25", "sklearn", "openpyxl"]
 
 bad = [m for m in req if not has(m)]
@@ -84,6 +84,14 @@ miss = [p for p in ("onnx/model.onnx", "tokenizer.json")
         if not os.path.exists(os.path.join(md, p))]
 if miss:
     print("缺向量模型: " + " ".join(miss))
+    print("  → 向量模型不是 pip 包，需单独下载一次（96 MB，约 1 分钟）：")
+    print(f'      cd "{root}"')
+    print("      B=https://hf-mirror.com/Xenova/bge-small-zh-v1.5/resolve/main")
+    print("      D=data/model/bge-small-zh-v1.5 && mkdir -p $D/onnx")
+    print("      for f in config.json tokenizer.json tokenizer_config.json "
+          "special_tokens_map.json vocab.txt; do curl -sLo $D/$f $B/$f; done")
+    print("      curl -sLo $D/onnx/model.onnx $B/onnx/model.onnx")
+    print("  → tokenizer 放在模型根目录、model.onnx 放在 onnx/ 子目录，别放反")
 
 if bad or miss:
     print("缺必需依赖: " + " ".join(bad) + ("  [向量模型]" if miss else ""))
@@ -95,6 +103,14 @@ PYEOF
 if check_deps; then
   echo "   环境没问题"
 else
+  # 向量模型不是 pip 包，bootstrap 装不了 —— 直接给下载指引，别白跑一遍装包
+  if [ ! -f "$ROOT/data/model/bge-small-zh-v1.5/onnx/model.onnx" ] \
+     || [ ! -f "$ROOT/data/model/bge-small-zh-v1.5/tokenizer.json" ]; then
+    echo ""
+    echo "!! 先按上面的命令下载向量模型，再重新跑 zsh run_all.sh"
+    echo "   （bootstrap_deps.sh 只装 pip 包，解决不了模型缺失）"
+    exit 1
+  fi
   echo "→ 自动补装依赖：code/bootstrap_deps.sh"
   zsh "$ROOT/code/bootstrap_deps.sh" || true
   if ! check_deps; then
@@ -145,7 +161,7 @@ fi
 
 step "6/7 生成 PDF 报告（一页结论 + 评测台账）"
 [ -f output/一页结论.md ] || echo "   提示：output/一页结论.md 不存在，报告将只含评测台账"
-"$PY" code/make_report.py || echo "!! 报告生成失败（需本机 Google Chrome）"
+"$PY" code/make_report.py || echo "!! 报告生成失败 —— 需已装 markdown 库 + 本机 Google Chrome（具体报错见上）"
 tick
 
 step "7/7 打交付包"

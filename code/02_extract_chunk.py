@@ -358,6 +358,18 @@ def main() -> None:
     todo = [m for m in ok
             if not os.path.exists(os.path.join(
                 SHARD_DIR, os.path.splitext(m["file"])[0] + ".json"))]
+
+    # PDF 原件缺席时提前给明确指引，别让它崩在 ProcessPool 的 traceback 里。
+    # 触发场景：干净 clone（仓库自带 manifest.json 作来源凭证，但不含 207 MB PDF）
+    # 时若跳过第 1 步直接跑这里，报错会是一大段并发栈，看不懂。
+    absent = [m for m in todo
+              if not os.path.exists(os.path.join(PDF_DIR, m["file"]))]
+    if absent:
+        print(f"!! data/pdfs/ 下缺 {len(absent)}/{len(todo)} 份报告的 PDF 原件，无法提取。")
+        print(f"   例如：{absent[0]['file']}")
+        print("   先跑第 1 步下载：python code/01_download.py")
+        print("   （或直接 zsh run_all.sh，会按顺序自动跑完整流程）")
+        sys.exit(1)
     if len(todo) < len(ok):
         print(f"断点续跑：跳过已完成 {len(ok) - len(todo)} 份，"
               f"本次处理 {len(todo)} 份")

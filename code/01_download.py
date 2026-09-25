@@ -224,7 +224,14 @@ def main() -> None:
     manifest: list[dict] = []
     if os.path.exists(MANIFEST):
         manifest = json.load(open(MANIFEST, encoding="utf-8"))
-    done = {(m["code"], m["kind"]) for m in manifest if m.get("ok")}
+    done = {(m["code"], m["kind"]) for m in manifest
+            if m.get("ok") and m.get("file")
+            and os.path.exists(os.path.join(PDF_DIR, m["file"]))}
+    # ↑ 「已下载」必须同时满足两个条件：manifest 记为成功 **且 PDF 文件真实存在**。
+    #   只信 manifest 会在干净 clone 的场景下误判 —— 仓库自带 manifest.json
+    #   （作为来源凭证），但不含 207 MB 的 PDF 原件；若只看 manifest，
+    #   第 1 步会把所有报告都当成「已存在」全部跳过，接着第 2 步提取
+    #   因 data/pdfs/ 为空而报 FileNotFoundError 直接中止。
 
     print(f"共 {len(COMPANIES)} 家公司 × {len(TARGETS)} 类报告\n")
     orgids: dict[str, str] = {}

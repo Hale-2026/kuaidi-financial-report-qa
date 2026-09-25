@@ -87,7 +87,7 @@ install_manually() {
 echo "================ 1/4 常规依赖（有 wheel，直装）================"
 "$PIP" install --no-cache-dir --retries 5 -i "$MIRROR" \
   pymupdf zhconv numpy onnxruntime tokenizers requests \
-  beautifulsoup4 lxml tqdm flask rank_bm25 scikit-learn openpyxl 2>&1 | tail -8
+  beautifulsoup4 lxml tqdm flask markdown rank_bm25 scikit-learn openpyxl 2>&1 | tail -8
 
 echo ""
 echo "================ 2/4 jieba（PyPI 只有 sdist，单独处理）================"
@@ -115,8 +115,9 @@ echo "================ 4/4 依赖自检 ================"
 "$SP_PY" - <<'PYEOF'
 import importlib, os, sys
 
-mods = ["fitz", "jieba", "rank_bm25", "numpy", "onnxruntime", "tokenizers",
-        "requests", "bs4", "lxml", "tqdm", "flask", "sklearn", "openpyxl"]
+mods = ["pymupdf", "jieba", "rank_bm25", "numpy", "onnxruntime", "tokenizers",
+        "requests", "bs4", "lxml", "tqdm", "flask", "sklearn", "openpyxl",
+        "markdown"]
 bad = []
 for m in mods:
     try:
@@ -149,8 +150,24 @@ RC=$?
 
 echo ""
 if [ "$RC" -ne 0 ]; then
+  # 区分两类缺口：pip 能装上的包 vs 必须单独下载的向量模型
+  # （原来的提示一律说「没装 jieba 也能跑」，在缺模型时答非所问，会误导）
+  if [ ! -f "$ROOT/data/model/bge-small-zh-v1.5/onnx/model.onnx" ] \
+     || [ ! -f "$ROOT/data/model/bge-small-zh-v1.5/tokenizer.json" ]; then
+    echo "!! 缺【向量模型】—— 它不是 pip 包，需要单独下载一次（96 MB，约 1 分钟）："
+    echo ""
+    echo "   cd \"$ROOT\""
+    echo "   B=https://hf-mirror.com/Xenova/bge-small-zh-v1.5/resolve/main"
+    echo "   D=data/model/bge-small-zh-v1.5 && mkdir -p \$D/onnx"
+    echo "   for f in config.json tokenizer.json tokenizer_config.json special_tokens_map.json vocab.txt; do curl -sLo \$D/\$f \$B/\$f; done"
+    echo "   curl -sLo \$D/onnx/model.onnx \$B/onnx/model.onnx"
+    echo ""
+    echo "   （国内直连 huggingface.co 通常不通，故走 hf-mirror 镜像；"
+    echo "     下完目录应为 data/model/bge-small-zh-v1.5/{tokenizer.json, onnx/model.onnx}）"
+    echo ""
+  fi
   echo "!! 还有依赖没装上（见上面那行「仍缺：」）。"
-  echo "   兜底：没装 jieba 也能跑 —— 建索引会自动降级为内置二元切分，只是分词精度略降。"
+  echo "   兜底：jieba / rank_bm25 / sklearn 是可选项，缺了会各自降级，不影响跑通。"
   exit 1
 fi
 
