@@ -11,7 +11,8 @@
 答案：
   · 默认「抽取式」：从召回块中按查询词权重 + 数字命中挑句子，拼成答案并逐句挂出处
     —— 不引入 LLM，可复现、可审计，检索失败不会被生成模型"圆过去"
-  · 可选「生成式」：设置环境变量 OPENAI_BASE_URL / OPENAI_API_KEY / LLM_MODEL
+  · 可选「生成式」：在仓库根目录的 .env 里（或直接设环境变量）配置
+    OPENAI_BASE_URL / OPENAI_API_KEY / LLM_MODEL
     即自动改用 OpenAI 兼容接口做 grounded 生成（只依据召回块作答 + 强制引用编号）
 
 用法（命令行）：
@@ -33,6 +34,43 @@ from importlib import import_module                              # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 IDX_DIR = os.path.join(ROOT, "data", "index")
+
+
+def load_dotenv(path: str | None = None) -> None:
+    """极简 .env 加载器（零依赖，不引 python-dotenv）。
+
+    「key 只放在 .env 里」这句话要真正成立，前提是**代码会读 .env** ——
+    否则照 .env.example 里 `cp .env.example .env` 做完，key 依然不生效。
+
+      · 只补 os.environ 里**没有**的键，真实环境变量始终优先；
+      · 支持 # 注释、空行、可选的 `export ` 前缀、单/双引号包裹；
+      · .env 已在 .gitignore 中排除，仓库里只留不含真实值的 .env.example；
+      · 文件不存在时静默跳过 —— 默认走抽取式答案，功能完整、评测不受影响。
+    """
+    p = path or os.path.join(ROOT, ".env")
+    if not os.path.isfile(p):
+        return
+    try:
+        with open(p, encoding="utf-8") as fh:
+            for raw in fh:
+                line = raw.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if line.startswith("export "):
+                    line = line[7:].lstrip()
+                if "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                k, v = k.strip(), v.strip()
+                if len(v) >= 2 and v[0] == v[-1] and v[0] in "\"'":
+                    v = v[1:-1]
+                if k and k not in os.environ:
+                    os.environ[k] = v
+    except OSError:
+        pass
+
+
+load_dotenv()
 CHUNK_F = os.path.join(ROOT, "data", "chunks", "chunks.jsonl")
 MODEL_DIR = os.path.join(ROOT, "data", "model", "bge-small-zh-v1.5")
 RRF_K = 60

@@ -10,8 +10,10 @@
 > **📦 本仓库 = 纯源码。** 按课程要求，仓库只放代码（`code/` + `web/` + `run_all.sh` +
 > 依赖清单 + 下载清单 `data/manifest.json`），**不含**财报 PDF 原件、报告 PDF、
 > 评测台账与页面截图 —— 那些作为作业附件单独提交。
-> 因此仓库里看不到 `data/pdfs` `data/index` `output` `shots` 属正常：
-> 跑一遍 `zsh run_all.sh` 即可全部复现（全离线，约 20 分钟）。
+> 因此仓库里看不到 `data/pdfs` `data/index` `output` `shots` 属正常。
+> 复现方式：① 按第 3 节下半段拉一次向量模型（96 MB，一次性）；
+> ② 跑 `zsh run_all.sh` 重建全部产物（下载 + 提取 + 建索引约 20 分钟，
+> 之后的检索与问答环节全程离线）。
 >
 > 下文「1. 交付清单」与「2. 目录结构」描述的是**本地跑完后的完整项目**，
 > 用于说明各目录的作用，不等同于本仓库的实际内容。
@@ -32,7 +34,7 @@
 | 命中率汇总指标 | `output/eval_scores.json` | ✅ |
 | 工作流程说明 | `output/工作流程说明.md` | ✅ |
 | 问答页面截图（9 张） | `shots/` | ✅ |
-| 代码仓库 | `code/`（7 个脚本 + Web 应用）+ 本 README | ✅ |
+| 代码仓库 | `code/`（13 个文件：9 个 Python + 2 个 Shell 脚本、依赖清单、评测题库）+ 本 README | ✅ |
 | 下载清单（来源 URL + SHA1） | `data/manifest.json` | ✅ |
 | 切块统计 | `data/chunks/stats.json` | ✅ |
 | 原始财报 PDF（34 份，207 MB） | `data/pdfs/` | ❌ 可一键复现 |
@@ -69,6 +71,8 @@ homework3/
 │   ├── app.py                问答页面（Flask）
 │   ├── make_report.py        Markdown → PDF 报告（Chrome 无头打印）
 │   ├── package.py            打交付包 dist/*.zip
+│   ├── bootstrap_deps.sh     依赖自检 + 补装（sdist 包手工兜底 + 装完功能验证）
+│   ├── shot.sh               Chrome 无头截图（零 npm 依赖，含 --no-sandbox）
 │   ├── eval_questions.json   评测题目与标准答案证据
 │   └── requirements.txt
 ├── data/
@@ -81,9 +85,9 @@ homework3/
 ├── web/                      问答页面前端
 ├── output/                   正式报告 PDF、评测台账、一页结论、工作流程说明
 ├── shots/                    页面截图（9 张）
-└── dist/                     交付包 —— 提交这个
+└── dist/                     归档包 —— 本地留档用（课程交付走「三行文本 + 附件」）
     ├── 作业3A_交付包_<日期>.zip      4.0 MB（报告+台账+截图+代码+manifest）
-    └── 作业3A_代码仓库_<日期>.zip    60 KB（纯源码，课程若单独要代码交这个）
+    └── 作业3A_代码仓库_<日期>.zip    纯源码包（约 200 KB）
 ```
 
 > `data/model/`、`data/index/`、`data/pdfs/` 体积大且可复现，交付包里不含。
@@ -128,10 +132,22 @@ python3 -m venv .venv
 
 ```bash
 B=https://hf-mirror.com/Xenova/bge-small-zh-v1.5/resolve/main
-mkdir -p data/model/bge-small-zh-v1.5/onnx && cd $_
+D=data/model/bge-small-zh-v1.5
+mkdir -p $D/onnx
 for f in config.json tokenizer.json tokenizer_config.json special_tokens_map.json vocab.txt; do
-  curl -sLO $B/$f; done
-curl -sLo onnx/model.onnx $B/onnx/model.onnx
+  curl -sLo $D/$f $B/$f; done
+curl -sLo $D/onnx/model.onnx $B/onnx/model.onnx
+```
+
+下完后的目录必须长这样（`run_all.sh` 的 0/7 自检就是按这两条路径找的，
+tokenizer 在**模型根目录**、模型文件在 **onnx/ 子目录**，放错位置会报"缺向量模型"）：
+
+```
+data/model/bge-small-zh-v1.5/
+├── config.json            tokenizer.json
+├── tokenizer_config.json  special_tokens_map.json
+├── vocab.txt
+└── onnx/model.onnx
 ```
 
 **一键跑全流程（幂等，可反复执行）：**
@@ -148,7 +164,7 @@ zsh run_all.sh
 
 ## 4. 运行
 
-一键（等价于下面 5 步 + 截图，幂等可重跑）：
+一键（等价于下面的分步命令 + 截图，共 7 步，幂等可重跑）：
 
 ```bash
 zsh run_all.sh
@@ -184,9 +200,9 @@ $V/python code/04_ask.py "顺丰控股2026年上半年单票收入" --mode hybri
 
 **样本：17 家公司 × 2 类报告 = 34 份**
 
-- 快递主干（8）：顺丰控股、圆通速递、韵达股份、申通快递（A 股）＋
-  中通快递、京东物流、极兔速递（港股）
-- 物流延伸（9）：东航物流、华贸物流、中国外运、中储股份、中谷物流、
+- 快递主干（7）：顺丰控股、圆通速递、韵达股份、申通快递（A 股 4 家）＋
+  中通快递、京东物流、极兔速递（港股 3 家）
+- 物流延伸（10）：东航物流、华贸物流、中国外运、中储股份、中谷物流、
   密尔克卫、传化智联、嘉友国际、铁龙物流、长久物流
 
 > 注：原计划纳入的**德邦股份（603056）已于 2026 年被京东物流私有化退市**
@@ -231,9 +247,10 @@ $V/python code/04_ask.py "顺丰控股2026年上半年单票收入" --mode hybri
 拼成答案并**逐句挂出处**。理由：本作业的核心是评测**检索**质量，
 生成式模型会把检索失败「圆过去」，掩盖问题；抽取式可复现、可审计，
 每一句都能点回原始页码。代码同时留了 OpenAI 兼容接口的开关
-（把 `OPENAI_BASE_URL` / `OPENAI_API_KEY` 写进 `.env` 即自动切换为 grounded 生成。
-`.env` 已在 `.gitignore` 中排除，仓库里只留不含真实值的 `.env.example` 模板；
-代码只读环境变量，任何 key 都不会出现在源码或提交里）。
+（把 `OPENAI_BASE_URL` / `OPENAI_API_KEY` 写进 `.env` 即自动切换为 grounded 生成 ——
+`04_ask.py` 顶层有个零依赖的 `load_dotenv()` 读取仓库根目录的 `.env`；
+已存在的真实环境变量优先，不会被文件里的值覆盖。`.env` 已在 `.gitignore` 中排除，
+仓库里只留不含真实值的 `.env.example` 模板；源码里没有任何 key，也不会出现在提交里）。
 
 跨公司题另做一层**按公司轮转 + 指标词优先**的答案拼装：否则同一家公司的高分句
 会把 6 个位置占满（实测未处理前，Q01 的答案里圆通给的是"营业收入 386.21 亿"，

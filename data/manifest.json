@@ -261,9 +261,10 @@
   "exchange": "SSE",
   "segment": "快递",
   "kind": "2025年年度报告",
-  "ok": false
- },
- {
+  "ok": false,
+  "note": "上交所接口 query.sse.com.cn 在本机网络环境返回空结果，本次尝试未取到文件；已自动降级到巨潮资讯网，紧随其后的下一条记录即该报告成功下载的结果"
+},
+{
   "code": "600233",
   "name": "圆通速递",
   "exchange": "SSE",
