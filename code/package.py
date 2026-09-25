@@ -223,7 +223,7 @@ def build_code(name: str) -> str:
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
         zf.writestr("代码仓库说明.md", CODE_INTRO)
         n += 1
-        for rel in ("README.md", "run_all.sh", ".gitignore"):
+        for rel in ("README.md", "run_all.sh", ".gitignore", ".env.example"):
             full = os.path.join(ROOT, rel)
             if os.path.exists(full):
                 zf.write(full, rel)
