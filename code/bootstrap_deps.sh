@@ -7,15 +7,25 @@
 #       固化下来：pip 装不上就走「下源码包 → 手工解包 → 拷进 site-packages」。
 #
 # 用法：
-#   cd "/Users/shaomengdan/WorkBuddy/快递公司财报/homework3"
+#   cd <本仓库目录>
 #   zsh code/bootstrap_deps.sh
 #
 # 退出码：0 = 依赖齐全；1 = 仍有缺失（上方会列出缺哪些）
 
 set -u
 
-ROOT="/Users/shaomengdan/WorkBuddy/快递公司财报/homework3"
-VENV="$HOME/.workbuddy/binaries/python/envs/default"
+# 仓库根 = 本脚本上一级目录。不写死本机路径。
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# venv 查找顺序与 run_all.sh 保持一致
+if [ -n "${VENV:-}" ]; then
+  :
+elif [ -x "$ROOT/.venv/bin/python" ]; then
+  VENV="$ROOT/.venv"
+elif [ -x "$HOME/.workbuddy/binaries/python/envs/default/bin/python" ]; then
+  VENV="$HOME/.workbuddy/binaries/python/envs/default"
+else
+  VENV="$ROOT/.venv"
+fi
 SP_PY="$VENV/bin/python"
 PIP="$VENV/bin/pip"
 MIRROR="https://pypi.tuna.tsinghua.edu.cn/simple"

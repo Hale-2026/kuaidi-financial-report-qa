@@ -16,6 +16,11 @@ dist/
 output/_server.log
 data/_ping.txt
 
+# 环境变量与密钥 —— key 只放 .env 里，绝不写进代码或提交
+.env
+.env.*
+!.env.example
+
 # Python
 __pycache__/
 *.py[cod]

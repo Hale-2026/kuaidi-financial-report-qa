@@ -3,7 +3,7 @@
 #
 # 用法:
 #   zsh code/push_github.sh <github用户名> [仓库名]
-#   例: zsh code/push_github.sh shaomengdan kuaidi-financial-report-qa
+#   例: zsh code/push_github.sh your-github-name kuaidi-financial-report-qa
 #
 # 前置条件（网页上各做一次即可）:
 #   1) 把 ~/.ssh/id_ed25519.pub 的内容加到 GitHub -> Settings -> SSH and GPG keys
@@ -18,7 +18,7 @@ REPO="${2:-kuaidi-financial-report-qa}"
 
 if [[ -z "$GH_USER" ]]; then
   echo "用法: zsh code/push_github.sh <github用户名> [仓库名]" >&2
-  echo "示例: zsh code/push_github.sh shaomengdan kuaidi-financial-report-qa" >&2
+  echo "示例: zsh code/push_github.sh your-github-name kuaidi-financial-report-qa" >&2
   exit 2
 fi
 

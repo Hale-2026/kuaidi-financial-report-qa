@@ -1,8 +1,8 @@
 #!/bin/zsh
 # run_all.sh —— 一键跑完全流程（断点续跑，可反复执行；不依赖 WorkBuddy 沙箱）
 #
-# 用法（在本机「终端」里跑，绕开 WorkBuddy 的执行沙箱）：
-#   cd "/Users/shaomengdan/WorkBuddy/快递公司财报/homework3"
+# 用法（在本机「终端」里跑，绕开执行沙箱）：
+#   cd <本仓库目录>          # 例如 clone 下来的 homework3/
 #   zsh run_all.sh
 #
 # 每一步都幂等：
@@ -20,20 +20,33 @@
 #   PORT=8000   Web 端口
 
 set -u
-ROOT="/Users/shaomengdan/WorkBuddy/快递公司财报/homework3"
-V="$HOME/.workbuddy/binaries/python/envs/default/bin"
+
+# 仓库根 = 本脚本所在目录。不写死本机路径，别人 clone 下来一样能跑。
+ROOT="$(cd "$(dirname "$0")" && pwd)"
 PORT="${PORT:-8000}"
 MAXW="${MAXW:-3}"
 
 cd "$ROOT" || { echo "!! 找不到目录 $ROOT"; exit 1; }
 mkdir -p data/pdfs data/text data/chunks data/index output shots
 
-PY="$V/python"
-if [ ! -x "$PY" ]; then
-  echo "!! 找不到虚拟环境：$PY"
-  echo "   先建环境：python3 -m venv \"$HOME/.workbuddy/binaries/python/envs/default\""
+# 找 Python：$VENV 环境变量 → 仓库内 .venv → 本机 WorkBuddy 托管环境 → 系统 python3
+CANDS=()
+[ -n "${VENV:-}" ] && CANDS+=("$VENV/bin/python")
+CANDS+=("$ROOT/.venv/bin/python" "$HOME/.workbuddy/binaries/python/envs/default/bin/python")
+_sys_py="$(command -v python3 2>/dev/null || true)"
+[ -n "$_sys_py" ] && CANDS+=("$_sys_py")
+
+PY=""
+for cand in "${CANDS[@]}"; do
+  if [ -x "$cand" ]; then PY="$cand"; break; fi
+done
+if [ -z "$PY" ]; then
+  echo "!! 找不到可用的 Python"
+  echo "   先建虚拟环境：python3 -m venv \"$ROOT/.venv\""
+  echo "   再装依赖    ：\"$ROOT/.venv/bin/pip\" install -r \"$ROOT/code/requirements.txt\""
   exit 1
 fi
+echo "Python: $PY"
 
 step() { echo ""; echo "================ $* ================"; }
 tick() { echo "   … $(date '+%H:%M:%S')"; }
@@ -151,5 +164,5 @@ echo "知识库切块   : $ROOT/data/chunks/chunks.jsonl"
 echo "检索索引     : $ROOT/data/index/"
 echo ""
 echo "手工看页面："
-echo "  \"$V/python\" code/app.py --port $PORT"
+echo "  \"$PY\" code/app.py --port $PORT"
 echo "  浏览器打开 http://127.0.0.1:$PORT"

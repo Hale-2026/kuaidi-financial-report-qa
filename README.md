@@ -35,7 +35,7 @@
 **重新生成交付物：**
 
 ```bash
-V=~/.workbuddy/binaries/python/envs/default/bin
+V=.venv/bin
 $V/python code/make_report.py            # Markdown → output/*.pdf（Chrome 无头打印）
 $V/python code/package.py                # 交付包 + 代码仓库包
 $V/python code/package.py --code-only    # 只打纯代码仓库包（约 60 KB，19 文件）
@@ -85,7 +85,7 @@ homework3/
 **一条命令搞定（推荐）—— 自检 + 补装 + 装完必验：**
 
 ```bash
-cd "/Users/shaomengdan/WorkBuddy/快递公司财报/homework3"
+cd homework3          # 进入本仓库根目录
 zsh code/bootstrap_deps.sh
 ```
 
@@ -97,9 +97,8 @@ sdist** 的包，pip 装不上就自动走「下源码包 → 手工解包 → �
 手工等价命令：
 
 ```bash
-python3 -m venv ~/.workbuddy/binaries/python/envs/default
-V=~/.workbuddy/binaries/python/envs/default/bin
-$V/pip install -r code/requirements.txt
+python3 -m venv .venv
+.venv/bin/pip install -r code/requirements.txt
 ```
 
 **已知坑 1 —— pip 解包纯 sdist 包会报错：** 本机 pip 解包 `jieba`、`zhconv` 时报
@@ -128,11 +127,11 @@ curl -sLo onnx/model.onnx $B/onnx/model.onnx
 **一键跑全流程（幂等，可反复执行）：**
 
 ```bash
-cd "/Users/shaomengdan/WorkBuddy/快递公司财报/homework3"
+cd homework3          # 进入本仓库根目录
 zsh run_all.sh
 ```
 
-`run_all.sh` 的 0/5 步会自检依赖：缺了就自动调 `bootstrap_deps.sh` 补装，
+`run_all.sh` 的 0/7 步会自检依赖：缺了就自动调 `bootstrap_deps.sh` 补装，
 补完仍缺则**直接中止**（避免白跑一遍 20 分钟的提取）。
 
 ---
@@ -148,7 +147,7 @@ zsh run_all.sh
 分步手工跑：
 
 ```bash
-V=~/.workbuddy/binaries/python/envs/default/bin
+V=.venv/bin
 $V/python code/01_download.py        # ① 下载（约 3 分钟，207 MB）
 $V/python code/02_extract_chunk.py   # ② 提取+切块（默认 3 进程并行，MAXW 可调）
 $V/python code/03_build_index.py     # ③ 建索引（BGE 编码 CPU）
@@ -222,7 +221,9 @@ $V/python code/04_ask.py "顺丰控股2026年上半年单票收入" --mode hybri
 拼成答案并**逐句挂出处**。理由：本作业的核心是评测**检索**质量，
 生成式模型会把检索失败「圆过去」，掩盖问题；抽取式可复现、可审计，
 每一句都能点回原始页码。代码同时留了 OpenAI 兼容接口的开关
-（设 `OPENAI_BASE_URL` / `OPENAI_API_KEY` 即自动切换为 grounded 生成）。
+（把 `OPENAI_BASE_URL` / `OPENAI_API_KEY` 写进 `.env` 即自动切换为 grounded 生成。
+`.env` 已在 `.gitignore` 中排除，仓库里只留不含真实值的 `.env.example` 模板；
+代码只读环境变量，任何 key 都不会出现在源码或提交里）。
 
 跨公司题另做一层**按公司轮转 + 指标词优先**的答案拼装：否则同一家公司的高分句
 会把 6 个位置占满（实测未处理前，Q01 的答案里圆通给的是"营业收入 386.21 亿"，

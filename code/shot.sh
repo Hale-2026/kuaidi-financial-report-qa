@@ -10,7 +10,8 @@
 set -u
 
 PORT="${1:-8000}"
-ROOT="/Users/shaomengdan/WorkBuddy/快递公司财报/homework3"
+# 仓库根 = 本脚本上一级目录。不写死本机路径。
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SHOTS="$ROOT/shots"
 mkdir -p "$SHOTS"
 

@@ -4,7 +4,8 @@
 import requests, time, os, json, sys
 
 BASE = "http://www.cninfo.com.cn"
-OUT = "/Users/shaomengdan/WorkBuddy/快递公司财报/homework3/reports"
+# 输出到「本脚本上一级目录/reports」，不写死本机路径
+OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "reports")
 os.makedirs(OUT, exist_ok=True)
 
 S = requests.Session()
