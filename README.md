@@ -42,7 +42,7 @@
 
 **代码仓库**：<https://github.com/Hale-2026/kuaidi-financial-report-qa> —— **只含源码**。
 `.gitignore` 排除了 207 MB 的 PDF 原件与检索索引（可由 `run_all.sh` 一键复现），
-所以仓库体积只有 200 KB 量级。想看完整项目，clone 下来跑一遍 `zsh run_all.sh` 即可。
+所以仓库只有 **21 个文件、约 180 KB**。想看完整项目，clone 下来跑一遍 `zsh run_all.sh` 即可。
 
 **重新生成交付物：**
 
@@ -50,7 +50,7 @@
 V=.venv/bin
 $V/python code/make_report.py            # Markdown → output/*.pdf（Chrome 无头打印）
 $V/python code/package.py                # 交付包 + 代码仓库包
-$V/python code/package.py --code-only    # 只打纯代码仓库包（约 60 KB，19 文件）
+$V/python code/package.py --code-only    # 只打纯代码仓库包（22 文件，约 70 KB）
 $V/python code/package.py --date 20260924  # 指定包名日期（默认今天）
 $V/python code/package.py --with-data    # 额外打含 207 MB PDF 原件的数据包
 ```
@@ -89,7 +89,7 @@ homework3/
 ├── shots/                    页面截图（9 张）
 └── dist/                     归档包 —— 本地留档用（课程交付走「三行文本 + 附件」）
     ├── 作业3A_交付包_<日期>.zip      4.0 MB（报告+台账+截图+代码+manifest）
-    └── 作业3A_代码仓库_<日期>.zip    纯源码包（约 200 KB）
+    └── 作业3A_代码仓库_<日期>.zip    纯源码包（22 文件，约 70 KB）
 ```
 
 > `data/model/`、`data/index/`、`data/pdfs/` 体积大且可复现，交付包里不含。

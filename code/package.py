@@ -141,8 +141,13 @@ code/                     流水线脚本
   ├── make_report.py      Markdown → PDF 报告（Chrome 无头打印）
   ├── package.py          打交付包
   ├── bootstrap_deps.sh   依赖自检 + 补装（含 jieba/zhconv 的 sdist 兜底）
-  └── shot.sh             Chrome 无头截图
+  ├── shot.sh             Chrome 无头截图
+  ├── download_cninfo.py  早期下载原型（正式流程请用 01_download.py）
+  ├── eval_questions.json 评测题目与标准答案证据
+  └── requirements.txt    依赖清单
 web/index.html            问答页面前端
+data/manifest.json        34 份报告的来源 URL / 大小 / SHA1 / 公告日
+data/chunks/stats.json    切块统计
 run_all.sh                一键跑完 7 步（幂等、断点续跑）
 README.md                 完整说明：设计决策、评测结果、已知限制
 ```
@@ -155,8 +160,8 @@ zsh run_all.sh                # 下载 → 提取 → 建索引 → 评测 → �
 ```
 
 数据（34 份财报 PDF / 切块 / 索引 / 向量模型）体积大，不在本仓库内；
-首次运行 `run_all.sh` 会自动下载与重建，来源 URL 与 SHA1 见交付包里的
-`data/manifest.json`。
+首次运行 `run_all.sh` 会自动下载与重建，来源 URL 与 SHA1 见 `data/manifest.json`
+（本仓库已附该清单，每份报告都可逐条回溯到交易所原文）。
 
 ## 依赖
 
@@ -167,13 +172,14 @@ zsh run_all.sh                # 下载 → 提取 → 建索引 → 评测 → �
 """
 
 
-def zipdir(zf: zipfile.ZipFile, sub: str, skip: tuple[str, ...] = ()) -> int:
+def zipdir(zf: zipfile.ZipFile, sub: str, skip: tuple[str, ...] = (),
+           skip_files: tuple[str, ...] = ()) -> int:
     n = 0
     base = os.path.join(ROOT, sub)
     for dirpath, dirs, files in os.walk(base):
         dirs[:] = [d for d in dirs if d != "__pycache__" and d not in skip]
         for f in files:
-            if f.startswith(".") or f.endswith(".log"):
+            if f.startswith(".") or f.endswith(".log") or f in skip_files:
                 continue
             full = os.path.join(dirpath, f)
             rel = os.path.relpath(full, ROOT)
@@ -228,8 +234,15 @@ def build_code(name: str) -> str:
             if os.path.exists(full):
                 zf.write(full, rel)
                 n += 1
-        n += zipdir(zf, "code", skip=("legacy",))   # legacy/ 是废弃脚本
+        n += zipdir(zf, "code", skip=("legacy",),
+                    skip_files=("push_github.sh",))   # legacy/ 与推送工具都非作业代码
         n += zipdir(zf, "web")
+        # 与 git 仓库内容对齐：下载清单与切块统计也是「代码可复现的凭证」，一并附上
+        for rel in ("data/manifest.json", "data/chunks/stats.json"):
+            full = os.path.join(ROOT, rel)
+            if os.path.exists(full):
+                zf.write(full, rel)
+                n += 1
     mb = os.path.getsize(out) / 1048576
     print(f"  → {os.path.relpath(out, ROOT)}   {n} 个文件   {mb:.2f} MB")
     return out
