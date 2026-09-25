@@ -7,11 +7,21 @@
 
 ---
 
+> **📦 本仓库 = 纯源码。** 按课程要求，仓库只放代码（`code/` + `web/` + `run_all.sh` +
+> 依赖清单 + 下载清单 `data/manifest.json`），**不含**财报 PDF 原件、报告 PDF、
+> 评测台账与页面截图 —— 那些作为作业附件单独提交。
+> 因此仓库里看不到 `data/pdfs` `data/index` `output` `shots` 属正常：
+> 跑一遍 `zsh run_all.sh` 即可全部复现（全离线，约 20 分钟）。
+>
+> 下文「1. 交付清单」与「2. 目录结构」描述的是**本地跑完后的完整项目**，
+> 用于说明各目录的作用，不等同于本仓库的实际内容。
+
 ## 1. 交付清单
 
-**要提交的东西只有一个 —— `dist/作业3A_交付包_<日期>.zip`（约 4 MB，35 个文件）。**
-它由 `python code/package.py` 生成，含下表全部内容；207 MB 的财报 PDF 原件
-不进包（`data/manifest.json` 记录来源 URL + SHA1，`zsh run_all.sh` 可一键复现）。
+**本地跑完后会生成一个归档包 —— `dist/作业3A_交付包_<日期>.zip`（约 4 MB，35 个文件）。**
+它由 `python code/package.py` 生成，含下表全部内容，便于一次性归档留档；
+207 MB 的财报 PDF 原件不进包（`data/manifest.json` 记录来源 URL + SHA1，
+`zsh run_all.sh` 可一键复现）。
 
 | 交付项 | 位置 | 是否进交付包 |
 |---|---|---|
@@ -28,9 +38,9 @@
 | 原始财报 PDF（34 份，207 MB） | `data/pdfs/` | ❌ 可一键复现 |
 | 切块知识库 / 检索索引 / 向量模型 | `data/chunks`、`data/index`、`data/model` | ❌ 可一键复现 |
 
-**代码仓库**：本目录即代码仓库（已 `git init`，37 个文件纳入版本管理）。
-`.gitignore` 排除了 207 MB 的 PDF 原件与索引（可由 `run_all.sh` 复现），
-仓库体积仅 4.2 MB。若课程要求**单独提交代码**，用 `--code-only` 出纯源码包。
+**代码仓库**：<https://github.com/Hale-2026/kuaidi-financial-report-qa> —— **只含源码**。
+`.gitignore` 排除了 207 MB 的 PDF 原件与检索索引（可由 `run_all.sh` 一键复现），
+所以仓库体积只有 200 KB 量级。想看完整项目，clone 下来跑一遍 `zsh run_all.sh` 即可。
 
 **重新生成交付物：**
 
