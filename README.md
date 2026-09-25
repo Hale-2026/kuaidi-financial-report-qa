@@ -154,9 +154,12 @@ python3 -m venv .venv            # ← 必须先建：下面两个脚本都会�
 zsh code/bootstrap_deps.sh       # 自检 + 补装 + 装完必验
 ```
 
-> **为什么 venv 必须先建**：`bootstrap_deps.sh` 与 `run_all.sh` 找 Python 的顺序都是
-> `$VENV` 环境变量 → **仓库内 `.venv`** → 系统 `python3`。若跳过这一步，
-> 脚本会以「找不到虚拟环境」中止（退出码 1），不会静默改用系统 Python。
+> **为什么 venv 必须先建**：两个脚本找 Python 的顺序都是 `$VENV` 环境变量 →
+> **仓库内 `.venv`**，且**不写死任何本机 / 个人环境路径**。
+> `bootstrap_deps.sh` 只认这两个，找不到就报「找不到虚拟环境」并以退出码 1 中止
+> ——**不会**改用系统 Python（否则依赖会被装成全局包，污染本机）；
+> `run_all.sh` 在两者都缺时才会退回系统 `python3` 跑自检，而系统 Python 一般没有
+> 这些依赖，第 0 步同样会中止并提示你先建 `.venv`。
 > 想用已有的 conda / 其他 venv，设 `VENV=/path/to/env` 再跑即可。
 
 脚本干三件事：① 常规依赖（有 wheel）直装；② `jieba` / `zhconv` 这类**只有
@@ -254,6 +257,10 @@ $V/python code/04_ask.py "顺丰控股2026年上半年单票收入" --mode hybri
 > 上交所 `query.sse.com.cn` 接口在本机网络环境返回空结果，故沪市公司统一走巨潮
 > （法定披露渠道）。脚本对每个源都做了重试与降级，全部来源 URL 记录在
 > `data/manifest.json`，可逐份回溯核验。
+>
+> `data/manifest.json` 共 **35 条记录 = 34 份成功下载 + 1 条上交所接口失败的尝试**
+> （失败那条带 `note` 说明原因，紧随其后即同一份报告改走巨潮成功的记录）；
+> `data/pdfs/` 里落地的就是这 34 份。
 
 **样本：17 家公司 × 2 类报告 = 34 份**
 

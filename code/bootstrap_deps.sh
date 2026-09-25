@@ -16,13 +16,11 @@ set -u
 
 # 仓库根 = 本脚本上一级目录。不写死本机路径。
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-# venv 查找顺序与 run_all.sh 保持一致
+# venv 只认这两个：$VENV 环境变量 → 仓库内 .venv。
+# 不写死任何本机路径，也不改用系统 Python（否则会把依赖装成全局包，污染本机）。
+# 顺序与 run_all.sh 一致。
 if [ -n "${VENV:-}" ]; then
   :
-elif [ -x "$ROOT/.venv/bin/python" ]; then
-  VENV="$ROOT/.venv"
-elif [ -x "$HOME/.workbuddy/binaries/python/envs/default/bin/python" ]; then
-  VENV="$HOME/.workbuddy/binaries/python/envs/default"
 else
   VENV="$ROOT/.venv"
 fi

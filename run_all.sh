@@ -1,7 +1,7 @@
 #!/bin/zsh
-# run_all.sh —— 一键跑完全流程（断点续跑，可反复执行；不依赖 WorkBuddy 沙箱）
+# run_all.sh —— 一键跑完全流程（断点续跑，可反复执行）
 #
-# 用法（在本机「终端」里跑，绕开执行沙箱）：
+# 用法（在本机「终端」里跑）：
 #   cd <本仓库目录>          # 例如 clone 下来的 kuaidi-financial-report-qa/
 #   zsh run_all.sh
 #
@@ -29,10 +29,12 @@ MAXW="${MAXW:-3}"
 cd "$ROOT" || { echo "!! 找不到目录 $ROOT"; exit 1; }
 mkdir -p data/pdfs data/text data/chunks data/index output shots
 
-# 找 Python：$VENV 环境变量 → 仓库内 .venv → 本机 WorkBuddy 托管环境 → 系统 python3
+# 找 Python：$VENV 环境变量 → 仓库内 .venv → 系统 python3
+# 不写死任何本机 / 个人环境路径；系统 python3 只是最后兜底（一般没装这些依赖，
+# 届时第 0 步会中止并提示先建 .venv，见 README 第 3 节）
 CANDS=()
 [ -n "${VENV:-}" ] && CANDS+=("$VENV/bin/python")
-CANDS+=("$ROOT/.venv/bin/python" "$HOME/.workbuddy/binaries/python/envs/default/bin/python")
+CANDS+=("$ROOT/.venv/bin/python")
 _sys_py="$(command -v python3 2>/dev/null || true)"
 [ -n "$_sys_py" ] && CANDS+=("$_sys_py")
 
