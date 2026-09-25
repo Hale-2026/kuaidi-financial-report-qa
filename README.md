@@ -8,7 +8,7 @@
 ---
 
 > **📦 本仓库 = 纯源码。** 按课程要求，仓库只放代码（`code/` + `web/` + `run_all.sh` +
-> 依赖清单 + 下载清单 `data/manifest.json`），**不含**财报 PDF 原件（207 MB）、
+> 依赖清单 + 下载清单 `data/manifest.json` + 切块统计 `data/chunks/stats.json`），**不含**财报 PDF 原件（207 MB）、
 > 报告 PDF、评测台账与页面截图 —— 那些作为作业附件单独提交。
 > 因此仓库里看不到 `data/pdfs` `data/index` `output` `shots` 属正常。
 >
@@ -162,8 +162,9 @@ zsh code/bootstrap_deps.sh       # 自检 + 补装 + 装完必验
 > 这些依赖，第 0 步同样会中止并提示你先建 `.venv`。
 > 想用已有的 conda / 其他 venv，设 `VENV=/path/to/env` 再跑即可。
 
-脚本干三件事：① 常规依赖（有 wheel）直装；② `jieba` / `zhconv` 这类**只有
-sdist** 的包，pip 装不上就自动走「下源码包 → 手工解包 → 拷进 site-packages」；
+脚本干三件事：① 常规依赖（有 wheel）整批直装，装完**逐个 import 复检、缺谁单独
+补装**（不让一个包失败连累其他包）；② `jieba` / `zhconv` 这类**只有
+sdist** 的包单独处理，pip 装不上就自动走「下源码包 → 手工解包 → 拷进 site-packages」；
 ③ 收尾做**功能性自检**（zhconv 要真能把「單票收入與毛利率」转成简体才算过，
 光 import 成功不算；向量模型文件也在此校验）。
 
@@ -171,13 +172,24 @@ sdist** 的包，pip 装不上就自动走「下源码包 → 手工解包 → �
 
 ```bash
 python3 -m venv .venv
-.venv/bin/pip install -r code/requirements.txt
+zsh code/bootstrap_deps.sh       # 一步到位，推荐
 ```
 
-**已知坑 1 —— pip 解包纯 sdist 包会报错：** 本机 pip 解包 `jieba`、`zhconv` 时报
-`EEXIST: file already exists, mkdir .../pip-install-*/jieba_xxxx`。
-这两个包是纯 Python，手工装即可：下载 tarball → `tar -xzf` → 把包目录拷进
-`site-packages/`（`bootstrap_deps.sh` 已自动化这一步）。
+> ⚠️ **别只跑 `.venv/bin/pip install -r code/requirements.txt`。** 清单里的
+> `jieba` / `zhconv` 在 PyPI 上只有 sdist 源码包，本机 pip 解包会报 `EEXIST`
+> （见下方「已知坑 1」）；**而且这条报错会让整条 pip 命令 abort —— 同一批里
+> 其他包也会一个都装不上**。`bootstrap_deps.sh` 已把这两个包从整批里拎出来
+> 单独处理，直接用脚本即可。
+
+**已知坑 1 —— pip 解包纯 sdist 包会报错，且会连累整批：** 本机 pip 解包
+`jieba`、`zhconv` 时报
+`EEXIST: file already exists, mkdir .../pip-install-*/jieba_xxxx`
+（换 `TMPDIR`、加 `--no-cache-dir` 均无效）。这两个包是纯 Python，手工装即可：
+下载 tarball → `tar -xzf` → 把包目录拷进 `site-packages/`
+（`bootstrap_deps.sh` 已自动化这一步）。
+**注意这个报错的杀伤范围**：它会让整条 pip 命令直接 abort。所以
+`bootstrap_deps.sh` 的 1/4 批**只放有 wheel 的包**，装完还逐个 import 复检、
+缺谁单独补装——避免一个 sdist 包把另外 12 个包一起带崩。
 
 **已知坑 2 —— jieba 缺席不该让整条流水线崩：** `03_build_index.py` 把 jieba 当
 **可选依赖**处理：装了就用地道分词 + 领域词典；没装会自动降级为**内置 CJK 二元

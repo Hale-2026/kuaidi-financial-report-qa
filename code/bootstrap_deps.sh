@@ -1,10 +1,15 @@
 #!/bin/zsh
 # bootstrap_deps.sh —— 依赖自检 + 稳健补装（作业3-A）
 #
-# 背景：本机 Python 3.13 下 pip 解包 jieba / zhconv 这类纯 sdist 包会报
-#       「EEXIST: file already exists」；且之前一轮 pip 安装整批没落地，
-#       导致第 3 步 `import jieba` 直接崩掉。本脚本把「缺什么装什么 + 装完必验」
-#       固化下来：pip 装不上就走「下源码包 → 手工解包 → 拷进 site-packages」。
+# 背景（两个真实踩过的坑）：
+#   1) `jieba` / `zhconv` 在 PyPI 上**只有 sdist 源码包**，本机 pip 解包它们会报
+#        EEXIST: file already exists, mkdir '.../pip-install-xxxx/<pkg>_xxxx'
+#      这是 pip 层的问题，换 TMPDIR、加 --no-cache-dir 都不管用。
+#   2) 更坑的是：**这个报错会让整条 pip 命令 abort**。如果把 sdist 混在整批里
+#      （原版就把 zhconv 混在 1/4 批里），同批已经下载好的 wheel 包也会一个都装不上
+#      —— 干净环境实测：13 个包里最终只有 jieba / zhconv 靠手工兜底装上，其余全缺。
+#   所以本脚本：整批只放有 wheel 的包 + 逐个复检补装；sdist 包单独走
+#   「pip 先试 → 失败就下源码包手工解包拷进 site-packages」；最后统一功能自检。
 #
 # 用法：
 #   cd <本仓库目录>
@@ -82,19 +87,55 @@ install_manually() {
   return 0
 }
 
-echo "================ 1/4 常规依赖（有 wheel，直装）================"
-"$PIP" install --no-cache-dir --retries 5 -i "$MIRROR" \
-  pymupdf zhconv numpy onnxruntime tokenizers requests \
-  beautifulsoup4 lxml tqdm flask markdown rank_bm25 scikit-learn openpyxl 2>&1 | tail -8
+# ---- 常规依赖：只放「有 wheel」的包 ---------------------------------------
+# ⚠️ 千万别把只有 sdist 的包（jieba / zhconv）混进这一批：
+#    本机 pip 解包纯 sdist 会报
+#      EEXIST: file already exists, mkdir '.../pip-install-xxxx/<pkg>_xxxx'
+#    而这个错误会让**整条 pip 命令 abort** —— 同批里已经下载好的 wheel 包
+#    也一个都装不上（实测：混入 zhconv 后，pymupdf 等 12 个包全部没装成）。
+#    这两个包各自单独处理（2/4、3/4），失败也只影响自己。
+WHEEL_PKGS=(
+  pymupdf numpy onnxruntime tokenizers requests beautifulsoup4
+  lxml tqdm flask markdown rank_bm25 scikit-learn openpyxl
+)
+# 包名 → import 名（复检用）
+mod_of() {
+  case "$1" in
+    beautifulsoup4) echo bs4 ;;
+    scikit-learn)   echo sklearn ;;
+    *)              echo "${1//-/_}" ;;
+  esac
+}
+
+echo "================ 1/4 常规依赖（有 wheel，整批直装）================"
+"$PIP" install --no-cache-dir --retries 5 -i "$MIRROR" "${WHEEL_PKGS[@]}" 2>&1 | tail -6
+
+# 整批失败也不放弃：逐个复检，缺谁单独补装（一个包失败不连累其他包）
+for p in "${WHEEL_PKGS[@]}"; do
+  m="$(mod_of "$p")"
+  if ! "$SP_PY" -c "import $m" >/dev/null 2>&1; then
+    echo "   缺 $p → 单独补装"
+    "$PIP" install --no-cache-dir --retries 5 -i "$MIRROR" "$p" 2>&1 | tail -3
+    if "$SP_PY" -c "import $m" >/dev/null 2>&1; then
+      echo "      ✅ $p 装上了"
+    else
+      echo "      ❌ $p 仍未装上（第 4/4 步自检会列出）"
+    fi
+  fi
+done
+echo "   常规依赖复检完成"
 
 echo ""
 echo "================ 2/4 jieba（PyPI 只有 sdist，单独处理）================"
 if "$SP_PY" -c "import jieba" >/dev/null 2>&1; then
   echo "   jieba 已就位，跳过"
 else
-  "$PIP" install --no-cache-dir --retries 3 -i "$MIRROR" jieba 2>&1 | tail -4
-  if ! "$SP_PY" -c "import jieba" >/dev/null 2>&1; then
-    echo "   pip 直装没成 → 手工解包拷贝"
+  LOG="$TMPDIR/jieba-pip.log"
+  if "$PIP" install --no-cache-dir --retries 3 -i "$MIRROR" jieba >"$LOG" 2>&1 \
+     && "$SP_PY" -c "import jieba" >/dev/null 2>&1; then
+    echo "   pip 直装成功"
+  else
+    echo "   pip 直装没成（$(grep -m1 -o 'ERROR:.*' "$LOG" || echo "sdist 解包失败")）→ 手工解包拷贝"
     install_manually jieba "$JIEBA_URL" || echo "   !! jieba 兜底安装也失败"
   fi
 fi
@@ -104,12 +145,19 @@ echo "================ 3/4 zhconv（要有词典才算能用）================"
 if "$SP_PY" -c "import zhconv;assert zhconv.convert('單票收入與毛利率','zh-cn')=='单票收入与毛利率'" >/dev/null 2>&1; then
   echo "   zhconv 正常（繁简转换可用）"
 else
-  echo "   zhconv 缺词典或未安装 → 手工解包拷贝"
-  install_manually zhconv || echo "   !! zhconv 兜底安装也失败"
+  LOG="$TMPDIR/zhconv-pip.log"
+  if "$PIP" install --no-cache-dir --retries 3 -i "$MIRROR" zhconv >"$LOG" 2>&1 \
+     && "$SP_PY" -c "import zhconv;assert zhconv.convert('單票收入與毛利率','zh-cn')=='单票收入与毛利率'" >/dev/null 2>&1; then
+    echo "   pip 直装成功"
+  else
+    echo "   pip 直装没成（$(grep -m1 -o 'ERROR:.*' "$LOG" || echo "sdist 解包失败")）→ 手工解包拷贝"
+    install_manually zhconv || echo "   !! zhconv 兜底安装也失败"
+  fi
 fi
 
 echo ""
 echo "================ 4/4 依赖自检 ================"
+export DEP_REPORT="$TMPDIR/missing_deps.txt"
 "$SP_PY" - <<'PYEOF'
 import importlib, os, sys
 
@@ -136,11 +184,15 @@ root = os.environ.get("WB_ROOT", ".")
 md = os.path.join(root, "data", "model", "bge-small-zh-v1.5")
 miss = [p for p in ("onnx/model.onnx", "tokenizer.json")
         if not os.path.exists(os.path.join(md, p))]
-if miss:
-    bad.append("向量模型:" + ",".join(miss))
 
-if bad:
-    print("❌ 仍缺：" + " ".join(bad))
+# 把「pip 包缺失」单列一份，供上层区分「只差模型」与「还差包」两种情形
+rp = os.environ.get("DEP_REPORT")
+if rp:
+    with open(rp, "w", encoding="utf-8") as f:
+        f.write(" ".join(bad))
+
+if bad or miss:
+    print("❌ 仍缺：" + " ".join(bad + (["向量模型:" + ",".join(miss)] if miss else [])))
     sys.exit(1)
 print("✅ 依赖齐全")
 PYEOF
@@ -149,9 +201,12 @@ RC=$?
 echo ""
 if [ "$RC" -ne 0 ]; then
   # 区分两类缺口：pip 能装上的包 vs 必须单独下载的向量模型
-  # （原来的提示一律说「没装 jieba 也能跑」，在缺模型时答非所问，会误导）
+  # （原来的提示一律说「还有依赖没装上」，只缺模型时答非所问，会误导）
+  missing_pkgs="$(cat "$DEP_REPORT" 2>/dev/null || echo '')"
+  model_miss=""
   if [ ! -f "$ROOT/data/model/bge-small-zh-v1.5/onnx/model.onnx" ] \
      || [ ! -f "$ROOT/data/model/bge-small-zh-v1.5/tokenizer.json" ]; then
+    model_miss=1
     echo "!! 缺【向量模型】—— 它不是 pip 包，需要单独下载一次（96 MB，约 1 分钟）："
     echo ""
     echo "   cd \"$ROOT\""
@@ -164,8 +219,12 @@ if [ "$RC" -ne 0 ]; then
     echo "     下完目录应为 data/model/bge-small-zh-v1.5/{tokenizer.json, onnx/model.onnx}）"
     echo ""
   fi
-  echo "!! 还有依赖没装上（见上面那行「仍缺：」）。"
-  echo "   兜底：jieba / rank_bm25 / sklearn 是可选项，缺了会各自降级，不影响跑通。"
+  if [ -n "$missing_pkgs" ]; then
+    echo "!! 还有 pip 包没装上：$missing_pkgs"
+    echo "   （上面 1/4 与 2/4 的输出里有 pip 的原始报错，多为网络问题，重跑一次即可）"
+  elif [ -n "$model_miss" ]; then
+    echo "!! pip 包已全部就位，只差上面那个向量模型 —— 按那三条命令下完，再跑一次本脚本即为 0。"
+  fi
   exit 1
 fi
 
