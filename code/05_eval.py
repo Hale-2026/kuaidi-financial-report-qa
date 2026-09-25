@@ -14,13 +14,22 @@
   · 是否命中标准答案证据（must_contain 关键词组；必答组 + soft 组分开算）
   · 答对没有、错在哪（题型分类 + 判卷结论，固化于 eval_table.md）
 
-判卷口径（v2，修正了两处缺陷，v1 口径同时保留以便对照）：
+判卷口径（v2 为主口径；v1 判卷口径同时保留以便对照）：
   ① 「正文 + 元数据」判定：命中判定把块的公司/报告/章节元数据一并纳入。
      理由：公司名本来就由过滤器强约束，再要求正文复述一遍会把正确召回判成失败
      （Q02 就是被这条误判的：Top1 正是顺丰的毛利率原文，只是正文里没写"顺丰"）。
   ② soft 组：题干问到但语料未披露的指标，记入 soft_must_contain，
      未命中不算检索失败，但台账里明确标注「语料未披露」
      （Q09 的"市场份额"：全语料核查确认中通 2026 半年报未披露该口径）。
+
+⚠ 台账里的「首轮实测」与「v1 判卷口径」是**两个不同的量**，别混读：
+  · 首轮实测（见 FIRST_RUN 常量）= 2026-09-24 首轮跑出来的**历史数字**。
+    当时检索侧尚未修复（Q01 实体表刷屏、Q03 跨市场术语鸿沟），
+    cover 模式也还没实现，故 cover 无值。这个量**不由本脚本计算**，
+    是固化的历史记录，只作对照。
+  · v1 判卷口径列 = 用**当前检索结果**按 v1 规则（仅正文、不含元数据）**重算**。
+    检索侧修复后 Q03 由未命中转命中，故 hybrid / bm25 各比首轮高 10pt。
+  两者都真实但不是同一个量。两个量在台账 1 节并列，可逐格对齐。
 
 输出：
   output/eval_runs.json     完整逐题日志（含召回明细，可复查）
@@ -41,6 +50,24 @@ os.makedirs(OUT, exist_ok=True)
 
 QF = os.path.join(ROOT, "code", "eval_questions.json")
 MODES = ["hybrid", "bm25", "vector", "cover"]
+
+# ---- 首轮实测（2026-09-24，检索侧修复前）----------------------------------
+# 仅作历史对照，**不由本脚本计算**，是固化的实测记录。
+# 依据：工作区记忆 .workbuddy/memory/2026-09-24.md
+#   「首轮结果 hybrid 60% / bm25 70% / vector 60%，跨公司全景题全 0%」
+# cover 模式是首轮之后才实现的改进项，故为 None（台账显示「—」）。
+FIRST_RUN = {"hybrid": 0.60, "bm25": 0.70, "vector": 0.60, "cover": None}
+FIRST_RUN_NOTE = (
+    "2026-09-24 首轮实测：检索侧尚未修复——领域词典未补跨市场术语"
+    "（票均收入 / 包裹单价），且尚无分组召回，跨公司全景题 Q01–Q03 三种模式全部未命中。"
+)
+# 首轮实测与本脚本 v1 判卷列之差，逐模式写明原因（差 10pt 的来源）
+FIRST_RUN_DIFF_NOTE = {
+    "hybrid": "首轮 Q03（跨市场术语）未命中；领域词典补齐后转命中 → +10pt",
+    "bm25": "同上：Q03 由未命中转为命中 → +10pt",
+    "vector": "一致：Q03 在 v1 判卷下两种口径都未命中（向量路在长表/附注上噪声大）",
+    "cover": "首轮尚无此模式（分组召回为首轮之后的改进项）",
+}
 MODE_LABEL = {
     "hybrid": "hybrid（BM25+向量·RRF）",
     "bm25": "bm25（仅词法）",
@@ -139,6 +166,11 @@ def main() -> None:
         scores[f"{m}_by_type"] = {
             t: {"n": len(v), "recall_hit_top5": round(sum(v) / len(v), 3)}
             for t, v in by_type.items()}
+    scores["first_run_measured"] = {
+        "note": FIRST_RUN_NOTE,
+        "recall_hit_top5": {m: FIRST_RUN[m] for m in MODES},
+        "diff_vs_v1_judged_on_current_retrieval": FIRST_RUN_DIFF_NOTE,
+    }
     json.dump(scores, open(os.path.join(OUT, "eval_scores.json"), "w",
                            encoding="utf-8"), ensure_ascii=False, indent=1)
 
@@ -153,23 +185,55 @@ def main() -> None:
     L.append(f"- 分词：{eng.meta['tokenizer']}")
     L.append("- 判卷口径：每题的 `must_contain` 是若干「同义写法组」，"
              "召回块中每组命中任一写法即算该组命中，全部组命中才算本题召回命中。")
-    L.append("  - **v2 口径（主口径）**：命中判定把块的"
+    L.append("  - **v2 判卷口径（主口径）**：命中判定把块的"
              "「公司/报告类型/章节」元数据一并纳入——公司名已由过滤器强约束，"
              "不应再要求正文复述（修正 Q02 类误判）。")
-    L.append("  - **v1 口径（对照）**：只看正文文本，为首次评测所用口径。")
+    L.append("  - **v1 判卷口径（对照，仅正文）**：只按正文文本判定、不纳入块元数据，"
+             "即首轮评测使用的那套判卷规则。")
+    L.append("    ⚠ 本列是**当前检索结果**按该规则**重算**的值，"
+             "**不等于首轮实测数字**：首轮之后检索侧另有修复（领域词典补入跨市场术语），"
+             "Q03 由未命中转为命中，故 hybrid / bm25 各高 10pt。")
+    L.append("  - **首轮实测（历史对照）**：2026-09-24 检索侧修复前跑出来的真实数字，"
+             "**不由本脚本计算**，是固化的历史记录，单列在第 4 列以便逐格对齐。")
     L.append("  - **soft 组**：题干问到但**语料未披露**的指标单列，"
              "未命中不计检索失败，但台账标注「语料未披露」。")
     L.append("")
     L.append("## 1. 汇总")
     L.append("")
-    L.append("| 检索模式 | 命中率@Top5 | 命中率@Top8 | （v1 口径@Top5，对照） |")
-    L.append("|---|---|---|---|")
+    L.append("| 检索模式 | 命中率@Top5（v2 主口径） | 命中率@Top8 | "
+             "v1 判卷口径@Top5（当前检索重算·对照） | 首轮实测@Top5（检索侧修复前） |")
+    L.append("|---|---|---|---|---|")
     for m in MODES:
         s = scores["by_mode"][m]
         star = " ★" if m == "cover" else ""
+        fr = FIRST_RUN[m]
+        frs = "—" if fr is None else f"{fr:.0%}"
         L.append(f'| {MODE_LABEL[m]}{star} | {s["recall_hit_top5"]:.0%} '
                  f'| {s["recall_hit_top8"]:.0%} '
-                 f'| {s["recall_hit_top5_textonly"]:.0%} |')
+                 f'| {s["recall_hit_top5_textonly"]:.0%} | {frs} |')
+    L.append("")
+    L.append("**两个对照列的差异来源（逐模式）**")
+    L.append("")
+    L.append("| 检索模式 | 首轮实测@Top5 | v1 判卷口径@Top5 | 差 | 差异来源 |")
+    L.append("|---|---|---|---|---|")
+    for m in MODES:
+        fr = FIRST_RUN[m]
+        v1 = scores["by_mode"][m]["recall_hit_top5_textonly"]
+        if fr is None:
+            L.append(f"| {MODE_LABEL[m]} | — | {v1:.0%} | — | "
+                     f"{FIRST_RUN_DIFF_NOTE[m]} |")
+        else:
+            d = v1 - fr
+            ds = "一致" if abs(d) < 1e-9 else f"{d:+.0%}"
+            L.append(f"| {MODE_LABEL[m]} | {fr:.0%} | {v1:.0%} | {ds} | "
+                     f"{FIRST_RUN_DIFF_NOTE[m]} |")
+    L.append("")
+    L.append(f"> {FIRST_RUN_NOTE}")
+    L.append("> ")
+    L.append("> **读法提示**：README 与一页结论里的「首次评测」列 = 本表**首轮实测**列；"
+             "本表**v1 判卷口径**列是在**当前检索结果**上的重算值。两列相差 10pt "
+             "（hybrid / bm25）属正常，不是数字错误——前者是历史检索结果，"
+             "后者是现行检索结果，差的那一题是 Q03。")
     L.append("")
     for m, title in (("hybrid", "hybrid（基线）"), ("cover", "cover（+分组召回）")):
         L.append(f"**分题型 · {title} @Top5**")
@@ -192,7 +256,7 @@ def main() -> None:
         if q.get("soft_must_contain"):
             L.append(f'- soft 组（语料未披露即不算失败）：{q["soft_must_contain"]}')
         L.append("")
-        L.append("| 模式 | 命中@5 | 命中@8 | （v1 口径@5） | Top1 出处 |")
+        L.append("| 模式 | 命中@5 | 命中@8 | （v1 判卷@5） | Top1 出处 |")
         L.append("|---|---|---|---|---|")
         for m in MODES:
             r = next(x for x in runs if x["qid"] == q["qid"] and x["mode"] == m)
@@ -220,11 +284,14 @@ def main() -> None:
     open(os.path.join(OUT, "eval_table.md"), "w",
          encoding="utf-8").write("\n".join(L))
 
-    print("\n==== 召回命中率（Top5 / Top8，v2 口径）====")
+    print("\n==== 召回命中率（Top5 / Top8，v2 主口径）====")
     for m in MODES:
         s = scores["by_mode"][m]
+        fr = FIRST_RUN[m]
+        frs = "—  " if fr is None else f"{fr:.0%}"
         print(f'  {m:7s} {s["recall_hit_top5"]:.0%}  /  {s["recall_hit_top8"]:.0%}'
-              f'   (v1 口径 {s["recall_hit_top5_textonly"]:.0%})')
+              f'   (v1 判卷口径 {s["recall_hit_top5_textonly"]:.0%}'
+              f' · 首轮实测 {frs})')
     print("\n==== 分题型 · cover（Top5）====")
     for t, s in scores["cover_by_type"].items():
         print(f'  {t:14s} n={s["n"]}  {s["recall_hit_top5"]:.0%}')
