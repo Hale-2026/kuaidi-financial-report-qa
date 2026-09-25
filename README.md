@@ -34,7 +34,7 @@
 | 命中率汇总指标 | `output/eval_scores.json` | ✅ |
 | 工作流程说明 | `output/工作流程说明.md` | ✅ |
 | 问答页面截图（9 张） | `shots/` | ✅ |
-| 代码仓库 | `code/`（13 个文件：9 个 Python + 2 个 Shell 脚本、依赖清单、评测题库）+ 本 README | ✅ |
+| 代码仓库 | `code/`（14 个文件：10 个 Python + 2 个 Shell 脚本、依赖清单、评测题库）+ 本 README | ✅ |
 | 下载清单（来源 URL + SHA1） | `data/manifest.json` | ✅ |
 | 切块统计 | `data/chunks/stats.json` | ✅ |
 | 原始财报 PDF（34 份，207 MB） | `data/pdfs/` | ❌ 可一键复现 |
@@ -74,6 +74,8 @@ homework3/
 │   ├── bootstrap_deps.sh     依赖自检 + 补装（sdist 包手工兜底 + 装完功能验证）
 │   ├── shot.sh               Chrome 无头截图（零 npm 依赖，含 --no-sandbox）
 │   ├── eval_questions.json   评测题目与标准答案证据
+│   ├── download_cninfo.py    早期下载原型（11 家旧名单、仅巨潮单源、不写 manifest；
+│   │                         正式流程用 01_download.py，本文件保留以呈现开发过程）
 │   └── requirements.txt
 ├── data/
 │   ├── pdfs/                 34 份财报 PDF

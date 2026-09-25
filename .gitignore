@@ -15,9 +15,7 @@ output/
 shots/
 reports/
 
-# 已从仓库移出的历史文件（本地保留，不再跟踪）
-# download_cninfo.py：早期版本，11 家旧名单，无任何地方引用
-code/download_cninfo.py
+# 开发过程杂物（本地保留，不再跟踪）
 code/push_github.sh
 code/legacy/
 
