@@ -84,7 +84,9 @@ zsh run_all.sh
 
 **代码仓库**：<https://github.com/Hale-2026/kuaidi-financial-report-qa> —— **只含源码**。
 `.gitignore` 排除了 207 MB 的 PDF 原件与检索索引（可由 `run_all.sh` 一键复现），
-所以仓库只有 **21 个文件、约 180 KB**。想看完整项目，clone 下来跑一遍 `zsh run_all.sh` 即可。
+所以仓库只有 **21 个文件、约 180 KB**（含 `.git` 提交历史，clone 下来约 430 KB；
+历史中不含任何报告 PDF / 截图等交付产物）。想看完整项目，clone 后跑一遍
+`zsh run_all.sh` 即可。
 
 **重新生成交付物：**
 
