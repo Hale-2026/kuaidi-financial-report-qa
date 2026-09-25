@@ -7,13 +7,23 @@ data/index/
 data/chunks/chunks.jsonl
 data/chunks/shards/
 
-# 交付包产物（由 code/package.py 生成）
+# 交付产物（由 run_all.sh / shot.sh / make_report.py / package.py 生成）
+# —— 一页结论、报告 PDF、页面截图、交付包均作为作业附件单独提交；
+#    本仓库只放源码，故一律不入库。
 dist/
+output/
+shots/
+reports/
+
+# 已从仓库移出的历史文件（本地保留，不再跟踪）
+# download_cninfo.py：早期版本，11 家旧名单，无任何地方引用
+code/download_cninfo.py
+code/push_github.sh
+code/legacy/
 
 # 运行日志与临时文件
 *.log
 *.part
-output/_server.log
 data/_ping.txt
 
 # 环境变量与密钥 —— key 只放 .env 里，绝不写进代码或提交
