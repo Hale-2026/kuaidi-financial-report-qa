@@ -2,7 +2,7 @@
 # run_all.sh —— 一键跑完全流程（断点续跑，可反复执行；不依赖 WorkBuddy 沙箱）
 #
 # 用法（在本机「终端」里跑，绕开执行沙箱）：
-#   cd <本仓库目录>          # 例如 clone 下来的 homework3/
+#   cd <本仓库目录>          # 例如 clone 下来的 kuaidi-financial-report-qa/
 #   zsh run_all.sh
 #
 # 每一步都幂等（与下文 0/7 – 7/7 的步骤号一一对应）：

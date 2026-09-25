@@ -5,7 +5,7 @@
 把几百 MB 的 PDF 原件与索引留在本地（可由 01_download.py + manifest.json 复现）。
 
     python code/package.py             # 交付包（约 4 MB）
-    python code/package.py --code-only # 只打纯代码仓库包（约 150 KB）
+    python code/package.py --code-only # 只打纯代码仓库包（约 80 KB）
     python code/package.py --with-data # 额外打含原始 PDF 的数据包（约 210 MB，慢）
     python code/package.py --date 20260924   # 指定包名日期（默认今天）
 
@@ -58,7 +58,7 @@ INTRO = """# 交付说明
 
 本包为「作业 3-A：快递物流行业财报问答知识库」的交付物。
 
-> **只需提交这一个 zip 包即可**（约 3 MB）。包内含正式报告 PDF、评测台账、
+> **只需提交这一个 zip 包即可**（约 4 MB）。包内含正式报告 PDF、评测台账、
 > 页面截图、全部源代码与下载清单；207 MB 的财报 PDF 原件不在包内，但可由
 > `data/manifest.json` 记录的交易所来源 URL 一键复现（见第二节）。
 
@@ -66,7 +66,7 @@ INTRO = """# 交付说明
 
 | 目录 / 文件 | 内容 |
 |---|---|
-| `output/作业3A_报告.pdf` | **正式报告（16 页）**：封面 + 一页结论 + 逐题评测台账，直接可交 |
+| `output/作业3A_报告.pdf` | **正式报告（17 页）**：封面 + 一页结论 + 逐题评测台账，直接可交 |
 | `output/一页结论.pdf` | 一页结论单独成册（3 页），对应作业要求的「一页结论」 |
 | `output/一页结论.md` | 上述结论的 Markdown 源文件（便于修改） |
 | `output/eval_table.md` | 10 道题 × 4 种检索模式的**逐题评测台账**（含每题答案与逐句出处） |
