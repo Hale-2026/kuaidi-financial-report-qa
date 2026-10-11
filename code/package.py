@@ -4,7 +4,7 @@
 默认打「交付包」——含报告 PDF / 评测台账 / 截图 / 代码 / 下载清单，
 把几百 MB 的 PDF 原件与索引留在本地（可由 01_download.py + manifest.json 复现）。
 
-    python code/package.py             # 交付包（约 4 MB）
+    python code/package.py             # 交付包（约 6 MB）
     python code/package.py --code-only # 只打纯代码仓库包（约 80 KB）
     python code/package.py --with-data # 额外打含原始 PDF 的数据包（约 210 MB，慢）
     python code/package.py --date 20260924   # 指定包名日期（默认今天）
@@ -62,7 +62,7 @@ INTRO = """# 交付说明
 
 本包为「作业 3-A：快递物流行业财报问答知识库」的交付物。
 
-> **只需提交这一个 zip 包即可**（约 4 MB）。包内含正式报告 PDF、评测台账、
+> **只需提交这一个 zip 包即可**（约 6 MB）。包内含正式报告 PDF、判定书 PDF、评测台账、
 > 页面截图、全部源代码与下载清单；207 MB 的财报 PDF 原件不在包内，但可由
 > `data/manifest.json` 记录的交易所来源 URL 一键复现（见第二节）。
 
@@ -78,7 +78,7 @@ INTRO = """# 交付说明
 | `output/逐题答案判定书.md`、`output/逐题实际答复存档.md` | 上述判定书与 40 份实际答复存档的 Markdown 源文件 |
 | `output/eval_runs.json` | 每题的**完整召回明细**（召回块、页码、得分），可逐条复查 |
 | `output/eval_scores.json` | 命中率汇总指标 |
-| `output/工作流程说明.md` | 六段流水线的完整说明（含所有参数取值与故障排查表） |
+| `output/工作流程说明.md` | 七步流水线的完整说明（含所有参数取值与故障排查表） |
 | `shots/` | 问答页面截图 9 张（含 BM25 / 向量 / 混合 / 分组召回四种模式对比） |
 | `code/` | 全部源代码（下载 → 提取切块 → 建索引 → 检索问答 → 评测 → 出报告） |
 | `web/index.html` | 问答页面前端 |

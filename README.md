@@ -63,7 +63,7 @@ zsh run_all.sh
 
 ## 1. 交付清单
 
-**本地跑完后会生成一个归档包 —— `dist/作业3A_交付包_<日期>.zip`（约 4 MB，35 个文件）。**
+**本地跑完后会生成一个归档包 —— `dist/作业3A_交付包_<日期>.zip`（约 6 MB，39 个文件）。**
 它由 `python code/package.py` 生成，含下表全部内容，便于一次性归档留档；
 207 MB 的财报 PDF 原件不进包（`data/manifest.json` 记录来源 URL + SHA1，
 `zsh run_all.sh` 可一键复现）。
@@ -79,7 +79,7 @@ zsh run_all.sh
 | 命中率汇总指标 | `output/eval_scores.json` | ✅ |
 | 工作流程说明 | `output/工作流程说明.md` | ✅ |
 | 问答页面截图（9 张） | `shots/` | ✅ |
-| 代码仓库 | `code/`（14 个文件：10 个 Python + 2 个 Shell 脚本、依赖清单、评测题库）+ 本 README | ✅ |
+| 代码仓库 | `code/`（15 个文件：11 个 Python + 2 个 Shell 脚本、依赖清单、评测题库）+ 本 README | ✅ |
 | 下载清单（来源 URL + SHA1） | `data/manifest.json` | ✅ |
 | 切块统计 | `data/chunks/stats.json` | ✅ |
 | 原始财报 PDF（34 份，207 MB） | `data/pdfs/` | ❌ 可一键复现 |
@@ -87,8 +87,8 @@ zsh run_all.sh
 
 **代码仓库**：<https://github.com/Hale-2026/kuaidi-financial-report-qa> —— **只含源码**。
 `.gitignore` 排除了 207 MB 的 PDF 原件与检索索引（可由 `run_all.sh` 一键复现），
-所以仓库只有 **21 个跟踪文件**（源码打包 ≈135 KiB），带完整提交历史；
-全新 `git clone` 下来不到 **0.6 MB**（其中 `.git` 约 0.25 MB），
+所以仓库只有 **22 个跟踪文件**（源码包 ≈112 KB），带完整提交历史；
+全新 `git clone` 下来不到 **0.8 MB**（其中 `.git` 约 0.42 MB），
 历史中不含任何报告 PDF / 截图等交付产物。
 想看完整项目，clone 后跑一遍 `zsh run_all.sh` 即可。
 
@@ -99,7 +99,7 @@ V=.venv/bin
 $V/python code/make_report.py            # Markdown → output/*.pdf（Chrome 无头打印）
 $V/python code/06_answer_audit.py        # 逐题答案判定书（Markdown + PDF）
 $V/python code/package.py                # 交付包 + 代码仓库包
-$V/python code/package.py --code-only    # 只打纯代码仓库包（22 文件，约 80 KB）
+$V/python code/package.py --code-only    # 只打纯代码仓库包（23 文件，约 112 KB）
 $V/python code/package.py --date 20260924  # 指定包名日期（默认今天）
 $V/python code/package.py --with-data    # 额外打含 207 MB PDF 原件的数据包
 ```
@@ -141,7 +141,7 @@ homework3/                 ← 本地跑完后的完整项目（clone 出来的�
 ├── shots/                    页面截图（9 张）
 └── dist/                     归档包 —— 本地留档用（课程交付走「三行文本 + 附件」）
     ├── 作业3A_交付包_<日期>.zip      4.0 MB（报告+台账+截图+代码+manifest）
-    └── 作业3A_代码仓库_<日期>.zip    纯源码包（22 文件，约 80 KB）
+    └── 作业3A_代码仓库_<日期>.zip    纯源码包（23 文件，约 112 KB）
 ```
 
 > `data/model/`、`data/index/`、`data/pdfs/` 体积大且可复现，交付包里不含。
