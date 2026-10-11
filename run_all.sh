@@ -10,7 +10,7 @@
 #   2/8 提取切块  —— 已有分片跳过（按报告粒度续跑）
 #   3/8 建索引    —— 已有向量分片跳过（按 500 块一片续跑）
 #   4/8 评测      —— 覆盖输出（很快）
-#   5/8 判定书    —— 读 eval_runs.json 渲染逐题答案判定书（Markdown + PDF）
+#   5/8 判定书    —— 读 eval_runs.json 渲染「10 题实际作答与判定」(14 页提交件) + 判定书 77 页(留档)
 #   6/8 截图      —— 启服务 + 本机 Chrome 无头截图（零 npm 依赖）
 #   7/8 出报告    —— Markdown → output/*.pdf（Chrome 无头打印）
 #   8/8 打包      —— dist/作业3A_交付包_<日期>.zip（本地归档留档）
@@ -139,7 +139,7 @@ step "4/8 10 道题 × 4 种检索模式评测（含分组召回对照）"
 "$PY" code/05_eval.py || echo "!! 评测有失败项（见上）"
 tick
 
-step "5/8 生成逐题答案判定书（实际作答原文 + 判定 + 页码证据）"
+step "5/8 生成 10 题实际作答与判定（提交件 14 页）+ 判定书（77 页留档）"
 "$PY" code/06_answer_audit.py || echo "!! 判定书生成失败（需先有 output/eval_runs.json；出 PDF 还需本机 Chrome）"
 tick
 
@@ -176,13 +176,15 @@ tick
 
 echo ""
 echo "================== 全部完成 =================="
-echo "★ 要提交的包  : $ROOT/dist/作业3A_交付包_<日期>.zip"
+echo "★ 提交附件    : output/一页结论.pdf + output/作业3A_10题实际作答与判定.pdf + shots/"
+echo "★ 提交说明    : dist/作业3A_提交说明_直接复制.md"
 echo "正式报告 PDF  : $ROOT/output/作业3A_报告.pdf"
 echo "一页结论      : $ROOT/output/一页结论.pdf"
 echo "问答页面截图 : $ROOT/shots/"
 echo "评测台账     : $ROOT/output/eval_table.md"
 echo "逐题明细     : $ROOT/output/eval_runs.json"
-echo "逐题判定书   : $ROOT/output/作业3A_逐题答案判定书.pdf"
+echo "10 题作答判定 : $ROOT/output/作业3A_10题实际作答与判定.pdf   (提交件, 14 页)"
+echo "逐题判定书   : $ROOT/output/作业3A_逐题答案判定书.pdf   (留档, 77 页)"
 echo "知识库切块   : $ROOT/data/chunks/chunks.jsonl"
 echo "检索索引     : $ROOT/data/index/"
 echo ""

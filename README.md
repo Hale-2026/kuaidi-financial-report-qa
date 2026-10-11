@@ -63,7 +63,7 @@ zsh run_all.sh
 
 ## 1. 交付清单
 
-**本地跑完后会生成一个归档包 —— `dist/作业3A_交付包_<日期>.zip`（约 6 MB，39 个文件）。**
+**本地跑完后会生成一个归档包 —— `dist/作业3A_交付包_<日期>.zip`（约 6.9 MB，41 个文件）。**
 它由 `python code/package.py` 生成，含下表全部内容，便于一次性归档留档；
 207 MB 的财报 PDF 原件不进包（`data/manifest.json` 记录来源 URL + SHA1，
 `zsh run_all.sh` 可一键复现）。
@@ -72,7 +72,8 @@ zsh run_all.sh
 |---|---|---|
 | **正式报告（32 页 PDF）** | `output/作业3A_报告.pdf` | ✅ |
 | **一页结论**（单独成册 4 页 PDF） | `output/一页结论.pdf` / `.md` | ✅ |
-| **逐题答案判定书（77 页 PDF）** | `output/作业3A_逐题答案判定书.pdf` | ✅ |
+| **10 题实际作答与判定（14 页 PDF，提交件）** | `output/作业3A_10题实际作答与判定.pdf` / `.md` | ✅ |
+| 逐题答案判定书（77 页 PDF，留档备查） | `output/作业3A_逐题答案判定书.pdf` | ✅ |
 | 40 份实际答复存档（系统原文） | `output/逐题实际答复存档.md` | ✅ |
 | 逐题评测台账 | `output/eval_table.md` | ✅ |
 | 每题完整召回明细 | `output/eval_runs.json` | ✅ |
@@ -97,7 +98,7 @@ zsh run_all.sh
 ```bash
 V=.venv/bin
 $V/python code/make_report.py            # Markdown → output/*.pdf（Chrome 无头打印）
-$V/python code/06_answer_audit.py        # 逐题答案判定书（Markdown + PDF）
+$V/python code/06_answer_audit.py        # 10 题实际作答与判定（14 页）+ 判定书（77 页）
 $V/python code/package.py                # 交付包 + 代码仓库包
 $V/python code/package.py --code-only    # 只打纯代码仓库包（23 文件，约 112 KB）
 $V/python code/package.py --date 20260924  # 指定包名日期（默认今天）
@@ -117,7 +118,7 @@ homework3/                 ← 本地跑完后的完整项目（clone 出来的�
 │   ├── 03_build_index.py     ③ 建向量索引 + BM25 索引
 │   ├── 04_ask.py             ④ 混合检索 + 带出处的答案生成（可命令行调用）
 │   ├── 05_eval.py            ⑤ 10 道题 × 4 种检索模式逐题评测（含分组召回对照）
-│   ├── 06_answer_audit.py    ⑥ 读 eval_runs.json 渲染逐题答案判定书
+│   ├── 06_answer_audit.py    ⑥ 渲染 10 题实际作答与判定（14 页）+ 判定书（77 页）
 │   │                            （实际答复原文 + 正确/部分/错误判定 + 页码证据）
 │   ├── embedder.py           BGE-small-zh-v1.5 ONNX 编码器（含兜底方案）
 │   ├── app.py                问答页面（Flask）
@@ -257,7 +258,7 @@ $V/python code/01_download.py        # ① 下载（约 3 分钟，207 MB）
 $V/python code/02_extract_chunk.py   # ② 提取+切块（默认 3 进程并行，MAXW 可调）
 $V/python code/03_build_index.py     # ③ 建索引（BGE 编码 CPU）
 $V/python code/05_eval.py            # ⑤ 跑 10 题评测
-$V/python code/06_answer_audit.py    # ⑥ 生成逐题答案判定书（实际作答 + 判定 + 页码证据）
+$V/python code/06_answer_audit.py    # ⑥ 生成 10 题实际作答与判定（14 页提交件）+ 判定书（77 页）
 $V/python code/app.py --port 8000    # 打开 http://127.0.0.1:8000
 
 # 命令行单题检索调试
@@ -580,8 +581,12 @@ vector 60% / cover 70%，与本表「首轮实测」列（60% / 70% / 60%）**�
 
 课件 P61–63、P90–92 的落地要求是**分开评价证据覆盖与答案表现**，并
 **保存真实答复、逐题给出判定理由**。为此新增 `code/06_answer_audit.py`，
-把 `output/eval_runs.json` 里 **40 份系统实际作答的原文**逐份摊开，产出
-`output/作业3A_逐题答案判定书.pdf`（77 页 / 正文 + `output/逐题实际答复存档.md` 附录）。
+把 `output/eval_runs.json` 里 **40 份系统实际作答的原文**逐份摊开，产出两份：
+
+- **`output/作业3A_10题实际作答与判定.pdf`（14 页）** —— 一题一页的**提交件**：
+  实际答复 + 网页证据卡片（含数值与页码）+ 四路线判定 + 判定理由 + 全景题逐公司取证；
+- `output/作业3A_逐题答案判定书.pdf`（77 页）+ `output/逐题实际答复存档.md`
+  —— 每题 4 条路线的完整作答原文与逐项覆盖明细，**留档备查**（不进提交附件）。
 
 - **判定规则**：`正确` = 该题义务全部覆盖；`部分正确` = 覆盖 1 项以上但不满；`错误` = 0 项。
   「覆盖」= 标准答案的数值出现在答复中，**且**归属到正确的公司 / 口径 / 期次。

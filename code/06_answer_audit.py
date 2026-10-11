@@ -8,8 +8,10 @@
   code/eval_questions.json    ← 10 题标准答案与证据义务（只作打分尺子）
 出：
   output/逐题实际答复存档.md    —— 系统实际输出原文（10 题 × 4 路线）
-  output/逐题答案判定书.md      —— 逐题判定 + 理由 + 证据覆盖 + 页码证据
+  output/逐题答案判定书.md      —— 逐题判定 + 理由 + 证据覆盖 + 页码证据（详版，40 份）
   output/作业3A_逐题答案判定书.pdf
+  output/10题实际作答与判定.md  —— 精简册（10 题逐题：实际答复 + 四路线判定 + 页码出处 + 理由）
+  output/作业3A_10题实际作答与判定.pdf
 
 判定规则（可复核，写在正文 §0）：
   正确     = 该题全部证据义务都在答复里被正确覆盖
@@ -366,6 +368,150 @@ def misses(rows: list[dict], Q: dict[str, dict]) -> str:
     return "\n".join(L)
 
 
+# ---------- 精简册：10 题实际作答与判定（一题一页，可作附件提交）----------
+def brief_reason(r: dict | None, qobj: dict, tot: int) -> str:
+    """一句话判定理由（以 cover 路线为准）"""
+    if not r:
+        return "本路线无记录。"
+    det = r.get("obligations_detail_answer") or []
+    vals = std_values(qobj)
+    gaps = {g["id"]: g for g in (r.get("gap_reasons") or [])}
+    cov = r.get("obligations_covered_answer", 0)
+    seg = [f"分组召回 cover 覆盖 {cov}/{tot}，判定 **{verdict(cov, tot)}**。"]
+    ok = [d for d in det if d["status"] == "已覆盖"]
+    par = [d for d in det if d["status"] == "部分"]
+    mis = [d for d in det if d["status"] == "缺"]
+    if ok:
+        seg.append("已答对：" + "、".join(
+            f"{d.get('subject','')} {d.get('item','')}={vals.get(d['id'],'—')}" for d in ok) + "。")
+    if par:
+        seg.append("数值出现但未归宿：" + "、".join(
+            f"{d.get('subject','')} {d.get('item','')}" for d in par) + "。")
+    if mis:
+        seg.append("未答出：" + "、".join(
+            f"{d.get('subject','')} {d.get('item','')}（应作答 {vals.get(d['id'],'—')}）" for d in mis) + "。")
+        codes = [gaps[d["id"]]["code"] for d in mis if d["id"] in gaps]
+        if codes:
+            from collections import Counter
+            c = Counter(codes)
+            seg.append("归因：" + "、".join(
+                f"{k} {GAP_NAME.get(k,'')}×{n}" for k, n in c.most_common()) + "。")
+    return " ".join(seg)
+
+
+def _matrix(Q: dict[str, dict], rows: list[dict]) -> tuple[list[str], dict]:
+    L = ["| 题（形状） | 义务 | " + " | ".join(MODE_LABEL_SHORT[m] for m in MODES) + " |",
+         "|" + "---|" * (2 + len(MODES))]
+    cnt = {m: {"正确": 0, "部分正确": 0, "错误": 0} for m in MODES}
+    for qid in sorted(Q, key=lambda x: int(re.sub(r"\D", "", x))):
+        qobj = Q[qid]
+        tot = len(qobj.get("obligations", []))
+        cells = []
+        for m in MODES:
+            r = next((x for x in rows if x["qid"] == qid and x["mode"] == m), None)
+            if not r:
+                cells.append("—")
+                continue
+            cov = r.get("obligations_covered_answer", 0)
+            v = verdict(cov, tot)
+            cnt[m][v] = cnt[m].get(v, 0) + 1
+            cells.append(f"{MARK_SHORT.get(v,'')} {cov}/{tot}")
+        L.append(f"| **{qid}**（{qobj.get('shape','')}） | {tot} | " + " | ".join(cells) + " |")
+    L.append("| **合计** | — | " + " | ".join(
+        f"✅{cnt[m]['正确']} 🟡{cnt[m]['部分正确']} ❌{cnt[m]['错误']}" for m in MODES) + " |")
+    return L, cnt
+
+
+def _brief_q(rows: list[dict], Q: dict[str, dict], qid: str) -> list[str]:
+    qobj = Q[qid]
+    obs = qobj.get("obligations", [])
+    tot = len(obs)
+    vals = std_values(qobj)
+    L = [f"### {qid}　{qobj['q']}", ""]
+    L.append(f"*形状*：{qobj.get('shape','')}　*类型*：{qobj.get('type','')}　*证据义务*：{tot} 项")
+    L.append("")
+    r_cover = next((x for x in rows if x["qid"] == qid and x["mode"] == "cover"), None)
+    if r_cover and r_cover.get("answer"):
+        L.append("**系统实际答复**")
+        L.append("")
+        L.append("> " + esc(r_cover["answer"]))
+        L.append("")
+        bl = r_cover.get("bullets") or []
+        if bl:
+            L.append("**系统给出的证据**（网页上的卡片，含数值与出处）：")
+            L.append("")
+            for i, b in enumerate(sorted(bl, key=lambda x: -(x.get("score") or 0)), 1):
+                L.append(f"{i}. `{b.get('cite','')}` —— {esc(b.get('text',''))[:140]}"
+                         + (" ……" if len(b.get("text", "")) > 140 else ""))
+            L.append("")
+    parts = []
+    for m in MODES:
+        r = next((x for x in rows if x["qid"] == qid and x["mode"] == m), None)
+        if not r:
+            continue
+        cov = r.get("obligations_covered_answer", 0)
+        parts.append(f"{MARK_SHORT.get(verdict(cov, tot),'')} {MODE_LABEL_SHORT[m]} {cov}/{tot}")
+    L.append("**四路线判定**：" + "　·　".join(parts))
+    L.append("")
+    L.append("| 义务 | 应作答项 | 标准数值 | 出处（页码） | "
+             + " | ".join(MODE_LABEL_SHORT[m] for m in MODES) + " |")
+    L.append("|" + "---|" * (4 + len(MODES)))
+    for ob in obs:
+        cells = []
+        for m in MODES:
+            r = next((x for x in rows if x["qid"] == qid and x["mode"] == m), None)
+            d = next((x for x in (r.get("obligations_detail_answer") or [])
+                      if x["id"] == ob["id"]), None) if r else None
+            cells.append({"已覆盖": "✅", "部分": "🟡", "缺": "❌"}.get(d["status"], "—") if d else "—")
+        L.append(f"| {ob['id']} | {ob.get('subject','')}·{ob.get('item','')} | {vals.get(ob['id'],'—')} | "
+                 f"{page_list(ob.get('src',''))} | " + " | ".join(cells) + " |")
+    L.append("")
+    L.append("**判定理由**：" + brief_reason(r_cover, qobj, tot))
+    L.append("")
+    L.append("---")
+    L.append("")
+    return L
+
+
+def brief(rows: list[dict], Q: dict[str, dict]) -> str:
+    L = ["# 作业 3-A · 10 题实际作答与判定", ""]
+    L.append("> 记录**系统对 10 道题的实际运行答复**（不是标准答案），逐题判定 "
+             "**正确 / 部分正确 / 错误**，并给出「公司 · 报告期 · 章节 · 页码」出处。"
+             "依据课程第三课 P61–63、P90–92：**分开评价证据覆盖与答案表现**。")
+    L.append("")
+    L.append("## 0. 判定规则与总览")
+    L.append("")
+    L.append("- **来源**：`output/eval_runs.json`（`code/04_ask.py` 实际跑出、`05_eval.py` 落盘）。"
+             "标准答案 `code/eval_questions.json` 只作打分尺子，不冒充系统作答。")
+    L.append("- **判定**：`正确` = 该题证据义务全部被正确作答；`部分正确` = 覆盖 1 项以上但不满；"
+             "`错误` = 一项都没覆盖。「覆盖」= 标准数值出现在答复中**且**归宿到正确的公司/口径/期次。")
+    L.append("- **四条路线**：主用「分组召回 cover」，另比对 混合 RRF / BM25 / 向量。")
+    L.append("")
+    ml, cnt = _matrix(Q, rows)
+    L.extend(ml)
+    L.append("")
+    L.append("> 图例：**✅ 正确 · 🟡 部分正确 · ❌ 错误**；分子 = 被正确作答的义务数，"
+             "分母 = 该题义务总数。合计行 = 该路线下 正确 / 部分正确 / 错误 的作答份数。")
+    L.append("")
+    ok = sum(cnt[m].get("正确", 0) for m in MODES)
+    pa = sum(cnt[m].get("部分正确", 0) for m in MODES)
+    er = sum(cnt[m].get("错误", 0) for m in MODES)
+    L.append(f"> **40 份作答：正确 {ok} · 部分正确 {pa} · 错误 {er}**"
+             "（答错与缺证据如实记录，未做美化）。")
+    L.append("")
+    L.append("---")
+    L.append("")
+    L.append("## 1. 逐题：实际作答 + 四路线判定 + 出处")
+    L.append("")
+    for qid in sorted(Q, key=lambda x: int(re.sub(r"\D", "", x))):
+        L.extend(_brief_q(rows, Q, qid))
+    L.append("")
+    L.append(panorama(rows, Q))
+    L.append("")
+    L.append(misses(rows, Q))
+    return "\n".join(L)
+
+
 def archive(rows: list[dict], Q: dict[str, dict]) -> str:
     L = []
     L.append("# 附录 · 10 题实际答复存档（系统原文）")
@@ -417,6 +563,8 @@ def main() -> int:
     open(os.path.join(OUT, "逐题答案判定书.md"), "w", encoding="utf-8").write(body)
     arc = archive(rows, Q)
     open(os.path.join(OUT, "逐题实际答复存档.md"), "w", encoding="utf-8").write(arc)
+    brf = brief(rows, Q)
+    open(os.path.join(OUT, "10题实际作答与判定.md"), "w", encoding="utf-8").write(brf)
 
     # 终端打印判定矩阵，便于核对
     print("逐题判定矩阵（答案层：正确 / 部分正确 / 错误）")
@@ -447,6 +595,11 @@ def main() -> int:
         if mr.html_to_pdf(html, pdf):
             print(f"  → output/作业3A_逐题答案判定书.pdf   "
                   f"{os.path.getsize(pdf) / 1024:.0f} KB")
+        pdf2 = os.path.join(OUT, "作业3A_10题实际作答与判定.pdf")
+        html2 = mr.md2html(os.path.join(OUT, "10题实际作答与判定.md"), None)
+        if mr.html_to_pdf(html2, pdf2):
+            print(f"  → output/作业3A_10题实际作答与判定.pdf   "
+                  f"{os.path.getsize(pdf2) / 1024:.0f} KB")
     except Exception as e:  # noqa: BLE001
         print("(PDF 合成失败：%s；Markdown 已生成)" % e)
     return 0
