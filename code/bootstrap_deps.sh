@@ -95,13 +95,12 @@ install_manually() {
 #    也一个都装不上（实测：混入 zhconv 后，pymupdf 等 12 个包全部没装成）。
 #    这两个包各自单独处理（2/4、3/4），失败也只影响自己。
 WHEEL_PKGS=(
-  pymupdf numpy onnxruntime tokenizers requests beautifulsoup4
-  lxml tqdm flask markdown rank_bm25 scikit-learn openpyxl
+  pymupdf numpy onnxruntime tokenizers requests
+  tqdm flask markdown rank_bm25 scikit-learn openpyxl
 )
 # 包名 → import 名（复检用）
 mod_of() {
   case "$1" in
-    beautifulsoup4) echo bs4 ;;
     scikit-learn)   echo sklearn ;;
     *)              echo "${1//-/_}" ;;
   esac
@@ -164,7 +163,7 @@ export DEP_REPORT="$TMPDIR/missing_deps.txt"
 import importlib, os, sys
 
 mods = ["pymupdf", "jieba", "rank_bm25", "numpy", "onnxruntime", "tokenizers",
-        "requests", "bs4", "lxml", "tqdm", "flask", "sklearn", "openpyxl",
+        "requests", "tqdm", "flask", "sklearn", "openpyxl",
         "markdown"]
 bad = []
 for m in mods:

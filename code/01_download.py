@@ -221,6 +221,22 @@ def pick(cands: list[dict], pattern: re.Pattern) -> dict | None:
     return sorted(ok, key=lambda x: x["date"], reverse=True)[0]
 
 
+def upsert(manifest: list[dict], rec: dict) -> None:
+    """按 (code, kind) **就地更新**清单；没有该条才追加。
+
+    历史缺陷（会造成脏数据，务必保留此注释）：原实现一律 `manifest.append`，
+    于是脚本每重跑一次，清单里就多出一整套记录——实测 35 条被撑到 69 条，
+    其中 34 条是同一批财报的重复条目；更糟的是收尾统计会把新旧记录一起汇总，
+    打印出自相矛盾的「完成 46 份 / 目标 34 份」。
+    """
+    key = (rec["code"], rec["kind"])
+    for i, m in enumerate(manifest):
+        if (m.get("code"), m.get("kind")) == key:
+            manifest[i] = rec
+            return
+    manifest.append(rec)
+
+
 def main() -> None:
     s = new_session()
     manifest: list[dict] = []
@@ -275,8 +291,11 @@ def main() -> None:
             hit = pick(cands, pat)
             if not hit:
                 print(f"   !! 未找到 {kind}（候选 {len(cands)} 条）")
-                manifest.append({"code": code, "name": name, "exchange": exch,
-                                 "segment": seg, "kind": kind, "ok": False})
+                upsert(manifest, {"code": code, "name": name, "exchange": exch,
+                                  "segment": seg, "kind": kind, "ok": False,
+                                  "file": None,
+                                  "note": f"检索到 {len(cands)} 条候选公告，"
+                                          f"标题正则均未匹配到正报全文"})
                 continue
             safe = f"{code}_{name}_{kind}.PDF"
             path = os.path.join(PDF_DIR, safe)
@@ -284,7 +303,7 @@ def main() -> None:
             size = os.path.getsize(path) if os.path.exists(path) else 0
             print(f"   {'OK ' if ok else 'FAIL'} {safe}  "
                   f"{size / 1048576:.1f}MB  {hit['src']}")
-            manifest.append({
+            upsert(manifest, {
                 "code": code, "name": name, "exchange": exch, "segment": seg,
                 "kind": kind, "ok": ok, "file": safe if ok else None,
                 "size_mb": round(size / 1048576, 2), "source": hit["src"],
@@ -296,18 +315,43 @@ def main() -> None:
             time.sleep(1.2)
         print()
 
-    # 清掉已不在清单里的公司（如已退市的德邦）留下的历史条目
+    # 清掉已不在清单里的公司（如已退市的德邦）留下的历史条目，并按 (code, kind)
+    # 去重——防止更早版本的重复条目继续留在清单里。
     valid = {c[0] for c in COMPANIES}
-    manifest = [m for m in manifest if m["code"] in valid]
-    manifest.sort(key=lambda m: (m["code"], m["kind"]))
+    dedup: dict[tuple, dict] = {}
+    for m in manifest:
+        if m["code"] not in valid:
+            continue
+        dedup[(m["code"], m["kind"])] = m
+    manifest = sorted(dedup.values(), key=lambda m: (m["code"], m["kind"]))
 
     json.dump(manifest, open(MANIFEST, "w", encoding="utf-8"),
               ensure_ascii=False, indent=1)
-    okn = sum(1 for m in manifest if m.get("ok"))
-    mb = sum(m.get("size_mb", 0) for m in manifest if m.get("ok"))
-    print(f"==== 完成：{okn} 份 / 目标 {len(COMPANIES) * len(TARGETS)} 份，"
-          f"合计 {mb:.1f} MB ====")
+
+    # 收尾统计一律**以磁盘实际存在的文件为准**，不数清单里的 ok 标记。
+    # 历史缺陷：旧版这里 `sum(1 for m in manifest if m.get("ok"))` 会把历史记录
+    # 一起计进去，实测在只下成 12/34 的情况下打印出「完成 46 份 / 目标 34 份」，
+    # 让人误以为全部下载成功。
+    target = {(c[0], t[0]) for c in COMPANIES for t in TARGETS}
+    have: dict[tuple, str] = {}
+    for m in manifest:
+        f = m.get("file")
+        if f and os.path.exists(os.path.join(PDF_DIR, f)):
+            have[(m["code"], m["kind"])] = f
+    mb = sum(os.path.getsize(os.path.join(PDF_DIR, f))
+             for f in have.values()) / 1048576
+    print(f"==== 磁盘到位：{len(have)} / {len(target)} 份，合计 {mb:.1f} MB ====")
     print(f"清单：{MANIFEST}")
+
+    missing = sorted(target - set(have))
+    if missing:
+        print(f"!! 仍缺 {len(missing)} 份（直接重跑本脚本即可，已下好的会自动跳过）：")
+        for code, kind in missing[:12]:
+            print(f"     {code} {kind}")
+        if len(missing) > 12:
+            print(f"     …… 另 {len(missing) - 12} 份")
+        sys.exit(1)
+    print("✅ 34 份全部到位")
 
 
 if __name__ == "__main__":

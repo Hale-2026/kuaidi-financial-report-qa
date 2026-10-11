@@ -66,7 +66,7 @@ def has(m):
         return False
 
 req = ["pymupdf", "numpy", "onnxruntime", "tokenizers",
-       "requests", "bs4", "lxml", "tqdm", "flask", "zhconv", "markdown"]
+       "requests", "tqdm", "flask", "zhconv", "markdown"]
 opt = ["jieba", "rank_bm25", "sklearn", "openpyxl"]
 
 bad = [m for m in req if not has(m)]

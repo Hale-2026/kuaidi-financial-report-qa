@@ -202,13 +202,17 @@ class Engine:
 
     # ---------------------------------------------------- 分组召回（全景题）
     def _search_cover(self, query: str, topk: int = 8,
-                      mode: str = "hybrid", **filters) -> list[dict]:
+                      mode: str = "hybrid", focus_off: bool = False,
+                      **filters) -> list[dict]:
         """跨公司全景题的专用召回：把"点名的多家公司"拆成 N 个子查询分别检索，
         再按轮转交错合并——保证 Top-K 里每家公司都有位置。
 
         动机（实测）：单轮全局检索时，问题里出现 4 个公司名，BM25 会把
         「释义表」「子公司名录」这类把公司名罗列几十遍的附录表顶到最前面，
         真正含财务数据的块反而排不进去；Top-5 也几乎被同一家公司占满。
+
+        focus_off=True 时跳过「指标焦点词」硬过滤——**仅供评测侧做失败归因的
+        消融实验**（判断某题未命中是不是焦点词把正确块误杀），正常问答不要打开。
         """
         comps = filters.get("companies") or self.detect_companies(query)
         comps = [c for c in comps if c in self.company_set]
@@ -221,9 +225,7 @@ class Engine:
         # 组内「核心术语」硬约束：只靠覆盖率会塞进噪声块（实测圆通组内 Top1
         # 命中的是《反恐怖主义法》法规清单、中通组内命中的是财报附注）。
         # 要求每家召回的块必须含这道题的「指标焦点词」，噪声自然被挡掉。
-        focus = focus_terms(query, sub_q)
-        if not focus:
-            focus = []
+        focus = [] if focus_off else focus_terms(query, sub_q)
 
         groups = []
         for c in comps:
@@ -327,13 +329,23 @@ class Engine:
 
         qterms = set(tokenize(query))
         num_q = bool(NUMQ.search(query))
+        # 这道题问的是哪些指标词（用于给「数字 + 指标词」双命中的句子加重）
+        focus_set = set(focus_terms(query, query))
         cands = []
         for ci, h in enumerate(hits):
             body = h["text"]
             is_tab = h["has_table"]
+            # 表格块只有在**含本题指标词**时才配抢摘要位置；否则满屏的
+            # 关联交易/费用明细数字会把真正答问的句子挤掉（实测见下方 Q08）。
+            tab_topic = is_tab and (not focus_set or any(w in body
+                                                         for w in focus_set))
             units = ([l for l in body.split("\n") if l.strip()]
                      if is_tab else
-                     [s for s in re.split(r"(?<=[。；！？])", body) if s.strip()])
+                     # 只按「。！？」切句，**不按「；」切**：中文年报里分号连接的
+                     # 并列分句常是同一组口径的数据（"单票收入2.17 元…；单票成本
+                     # 1.90 元…；单票毛利0.27 元…"），按分号切开就会只剩一个数，
+                     # 与课程 P91「数字要带口径」相悖。实测 Q08 因此由 0/3 → 3/3。
+                     [s for s in re.split(r"(?<=[。！？])", body) if s.strip()])
             for si, s in enumerate(units):
                 s2 = s.strip()
                 if len(s2) < 6:
@@ -346,11 +358,25 @@ class Engine:
                     continue
                 # 句内命中密度 + 数字奖励 + 靠前奖励
                 dens = overlap / (len(t) ** 0.5)
-                score = dens + (0.45 if (num_q and NUM.search(s2)) else 0)
+                has_num = bool(NUM.search(s2))
+                hit_focus = (any(w in s2 for w in focus_set)
+                             if focus_set else True)
+                score = dens + (0.45 if (num_q and has_num) else 0)
+                # 「带数字 + 带本题指标词」才是真正答问的证据句（P91：数字要带口径）。
+                # 只有数字（关联交易明细）或只有词（引言），都不足以回答"是多少"。
+                if num_q and has_num and hit_focus:
+                    score += 0.55
                 score += 0.25 / (1 + si) + 0.30 / (1 + ci)
-                if h["has_table"]:
+                if tab_topic:
                     score += 0.15
-                cands.append((score, ci, s2, bool(NUM.search(s2))))
+                # 引言句降权：以「：/如下」收尾的句子只是引出下文的标题，
+                # 它往往与问题词重合度最高（"单票收入、成本、毛利及其变动情况如下："），
+                # 却一个数都不带；不压它就会把真正带数字的实句挤出摘要。
+                # 实测：Q08 加这条之前，摘要取到的是"…及其变动情况如下："，
+                # 2.17 / 1.90 / 0.27 三个数全丢，答案层覆盖 0/3。
+                if s2.rstrip().endswith(("：", ":", "如下")):
+                    score -= 0.45
+                cands.append((score, ci, s2, has_num))
 
         cands.sort(key=lambda x: -x[0])
         picked, seen = [], set()

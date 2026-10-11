@@ -66,8 +66,8 @@ INTRO = """# 交付说明
 
 | 目录 / 文件 | 内容 |
 |---|---|
-| `output/作业3A_报告.pdf` | **正式报告（17 页）**：封面 + 一页结论 + 逐题评测台账，直接可交 |
-| `output/一页结论.pdf` | 一页结论单独成册（3 页），对应作业要求的「一页结论」 |
+| `output/作业3A_报告.pdf` | **正式报告（32 页）**：封面 + 一页结论 + 逐题评测台账 + 义务覆盖地图 + 失败归因 + 全景题逐公司取证，直接可交 |
+| `output/一页结论.pdf` | 一页结论单独成册（4 页），对应作业要求的「一页结论」 |
 | `output/一页结论.md` | 上述结论的 Markdown 源文件（便于修改） |
 | `output/eval_table.md` | 10 道题 × 4 种检索模式的**逐题评测台账**（含每题答案与逐句出处） |
 | `output/eval_runs.json` | 每题的**完整召回明细**（召回块、页码、得分），可逐条复查 |
@@ -140,7 +140,8 @@ code/                     流水线脚本
   ├── 02_extract_chunk.py ② 提取文字 + 表格按行列还原 + 切块（带 公司/章节/页码）
   ├── 03_build_index.py   ③ 建 BM25 + 向量双索引（jieba 缺失自动降级，不中断）
   ├── 04_ask.py           ④ 混合检索（RRF + 分组召回）+ 抽取式带出处答案
-  ├── 05_eval.py          ⑤ 10 题 × 4 种检索模式逐题评测
+  ├── 05_eval.py          ⑤ 10 题 × 4 条路线，召回层 + 答案层两层评测
+  │                          （证据义务覆盖 / 失败归因 / 全景题逐公司取证）
   ├── embedder.py         BGE-small-zh-v1.5 ONNX 编码器（CPU，不依赖 torch）
   ├── app.py              Flask 问答页面后端
   ├── make_report.py      Markdown → PDF 报告（Chrome 无头打印）
@@ -170,8 +171,8 @@ zsh run_all.sh                # 下载 → 提取 → 建索引 → 评测 → �
 
 ## 依赖
 
-- **必需**：`pymupdf` `numpy` `onnxruntime` `tokenizers` `requests` `bs4`
-  `lxml` `tqdm` `flask` `zhconv`
+- **必需**：`pymupdf` `numpy` `onnxruntime` `tokenizers` `requests` `tqdm`
+  `flask` `zhconv` `markdown`（与 `code/requirements.txt` 逐条对齐）
 - **可选**（缺失有降级方案）：`jieba`（分词 → 内置二元切分）· `rank_bm25`
   （→ 自实现 BM25）· `scikit-learn` · `openpyxl`
 """

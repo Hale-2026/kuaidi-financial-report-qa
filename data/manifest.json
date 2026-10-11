@@ -45,7 +45,7 @@
   "title": "2025年年度报告",
   "url": "http://static.cninfo.com.cn/finalpage/2026-04-25/1225187119.PDF",
   "sha1": "02b0d571616398942d4bc321954233b3770174ce",
-  "downloaded_at": "2026-09-24T09:41:26"
+  "downloaded_at": "2026-10-11T10:39:52"
  },
  {
   "code": "002120",
@@ -61,7 +61,7 @@
   "title": "2026年半年度报告",
   "url": "http://static.cninfo.com.cn/finalpage/2026-08-26/1225504941.PDF",
   "sha1": "fbeffe914a0b974864e14a3f10df2fbb0b3288e8",
-  "downloaded_at": "2026-09-24T09:41:29"
+  "downloaded_at": "2026-10-11T10:39:59"
  },
  {
   "code": "002352",
@@ -72,12 +72,12 @@
   "ok": true,
   "file": "002352_顺丰控股_2025年年度报告.PDF",
   "size_mb": 22.64,
-  "source": "SZSE官网",
+  "source": "巨潮资讯网(法定披露平台)",
   "announce_date": "2026-03-31",
-  "title": "顺丰控股：2025年年度报告",
-  "url": "http://disc.szse.cn/download/disc/disk03/finalpage/2026-03-31/c1f4e122-e2dc-43b6-ba86-660140d9fb51.PDF",
+  "title": "2025年年度报告",
+  "url": "http://static.cninfo.com.cn/finalpage/2026-03-31/1225057387.PDF",
   "sha1": "e8915767cca50e3d70fc78d214242b81b46c9572",
-  "downloaded_at": "2026-09-24T09:41:09"
+  "downloaded_at": "2026-10-11T10:39:28"
  },
  {
   "code": "002352",
@@ -88,12 +88,12 @@
   "ok": true,
   "file": "002352_顺丰控股_2026年半年度报告.PDF",
   "size_mb": 8.03,
-  "source": "SZSE官网",
+  "source": "巨潮资讯网(法定披露平台)",
   "announce_date": "2026-08-29",
-  "title": "顺丰控股：2026年半年度报告",
-  "url": "http://disc.szse.cn/download/disc/disk03/finalpage/2026-08-29/ef5e34a9-a839-48b2-ad60-e550ce2b918c.PDF",
+  "title": "2026年半年度报告",
+  "url": "http://static.cninfo.com.cn/finalpage/2026-08-29/1225528421.PDF",
   "sha1": "5c4d4f8f213f4e03e007e05aab87f6cc4b88a96b",
-  "downloaded_at": "2026-09-24T09:41:18"
+  "downloaded_at": "2026-10-11T10:39:36"
  },
  {
   "code": "002468",
@@ -109,7 +109,7 @@
   "title": "2025年年度报告",
   "url": "http://static.cninfo.com.cn/finalpage/2026-04-28/1225215186.PDF",
   "sha1": "f492a7db8a97a71192c0b27d6687c627f669caf8",
-  "downloaded_at": "2026-09-24T09:41:55"
+  "downloaded_at": "2026-10-11T10:40:09"
  },
  {
   "code": "002468",
@@ -125,7 +125,7 @@
   "title": "2026年半年度报告",
   "url": "http://static.cninfo.com.cn/finalpage/2026-08-28/1225517934.PDF",
   "sha1": "7f586ea2594a01894ab4eecfe0238f032dc5326f",
-  "downloaded_at": "2026-09-24T09:42:05"
+  "downloaded_at": "2026-10-11T10:40:15"
  },
  {
   "code": "01519",
@@ -261,15 +261,6 @@
   "exchange": "SSE",
   "segment": "快递",
   "kind": "2025年年度报告",
-  "ok": false,
-  "note": "上交所接口 query.sse.com.cn 在本机网络环境返回空结果，本次尝试未取到文件；已自动降级到巨潮资讯网，紧随其后的下一条记录即该报告成功下载的结果"
- },
- {
-  "code": "600233",
-  "name": "圆通速递",
-  "exchange": "SSE",
-  "segment": "快递",
-  "kind": "2025年年度报告",
   "ok": true,
   "file": "600233_圆通速递_2025年年度报告.PDF",
   "size_mb": 14.53,
@@ -294,7 +285,7 @@
   "title": "圆通速递股份有限公司2026年半年度报告",
   "url": "http://static.cninfo.com.cn/finalpage/2026-08-20/1225483041.PDF",
   "sha1": "478175e1f768fd9593ebccc705ef571671224708",
-  "downloaded_at": "2026-09-24T09:41:23"
+  "downloaded_at": "2026-10-11T10:39:45"
  },
  {
   "code": "600787",
@@ -310,7 +301,7 @@
   "title": "中储发展股份有限公司2025年年度报告",
   "url": "http://static.cninfo.com.cn/finalpage/2026-03-31/1225061950.PDF",
   "sha1": "eef299969abe4246b62d0a62f105474d89b13569",
-  "downloaded_at": "2026-09-24T09:42:23"
+  "downloaded_at": "2026-10-11T10:40:39"
  },
  {
   "code": "600787",
@@ -326,7 +317,7 @@
   "title": "中储发展股份有限公司2026年半年度报告",
   "url": "http://static.cninfo.com.cn/finalpage/2026-08-27/1225514225.PDF",
   "sha1": "deefc86c6280a098a846a69bea35905e57aea5d6",
-  "downloaded_at": "2026-09-24T09:42:25"
+  "downloaded_at": "2026-10-11T10:40:41"
  },
  {
   "code": "601156",
@@ -342,7 +333,7 @@
   "title": "东航物流2025年年度报告",
   "url": "http://static.cninfo.com.cn/finalpage/2026-03-28/1225048375.PDF",
   "sha1": "54be40ee1b88fb5eef82fa14258f1de96d3c86b9",
-  "downloaded_at": "2026-09-24T09:42:08"
+  "downloaded_at": "2026-10-11T10:40:22"
  },
  {
   "code": "601156",
@@ -358,7 +349,7 @@
   "title": "东航物流2026年半年度报告",
   "url": "http://static.cninfo.com.cn/finalpage/2026-08-31/1225534371.PDF",
   "sha1": "006dc1d41ebe18880e1607098daa48444875baf5",
-  "downloaded_at": "2026-09-24T09:42:10"
+  "downloaded_at": "2026-10-11T10:40:25"
  },
  {
   "code": "601598",
@@ -374,7 +365,7 @@
   "title": "2025年年度报告",
   "url": "http://static.cninfo.com.cn/finalpage/2026-03-31/1225062693.PDF",
   "sha1": "39ddf8a953d916d0dfcffd94380022d5c435839c",
-  "downloaded_at": "2026-09-24T09:42:18"
+  "downloaded_at": "2026-10-11T10:40:33"
  },
  {
   "code": "601598",
@@ -390,7 +381,7 @@
   "title": "2026年半年度报告",
   "url": "http://static.cninfo.com.cn/finalpage/2026-08-26/1225505360.PDF",
   "sha1": "8856dd6712068db64a0d9ed28a00dfbfad45579f",
-  "downloaded_at": "2026-09-24T09:42:21"
+  "downloaded_at": "2026-10-11T10:40:37"
  },
  {
   "code": "603128",
@@ -406,7 +397,7 @@
   "title": "港中旅华贸国际物流股份有限公司2025年年度报告",
   "url": "http://static.cninfo.com.cn/finalpage/2026-04-30/1225266895.PDF",
   "sha1": "255a3d6932f097dc4db6b27548dc34a6c21d747a",
-  "downloaded_at": "2026-09-24T09:42:12"
+  "downloaded_at": "2026-10-11T10:40:27"
  },
  {
   "code": "603128",
@@ -422,7 +413,7 @@
   "title": "港中旅华贸国际物流股份有限公司2026年半年度报告",
   "url": "http://static.cninfo.com.cn/finalpage/2026-08-25/1225497223.PDF",
   "sha1": "4560e29d237dfb4328fbfc66bd0e375dea42828d",
-  "downloaded_at": "2026-09-24T09:42:14"
+  "downloaded_at": "2026-10-11T10:40:29"
  },
  {
   "code": "603565",
@@ -438,7 +429,7 @@
   "title": "2025年年度报告",
   "url": "http://static.cninfo.com.cn/finalpage/2026-04-23/1225151195.PDF",
   "sha1": "d12250312ff3241000d79fe63ca72b43f1737dbf",
-  "downloaded_at": "2026-09-24T09:42:27"
+  "downloaded_at": "2026-10-11T10:40:43"
  },
  {
   "code": "603565",
@@ -454,7 +445,7 @@
   "title": "2026年半年度报告_全文",
   "url": "http://static.cninfo.com.cn/finalpage/2026-08-27/1225512412.PDF",
   "sha1": "acbd58d3fbac789e3a0a7bf5b7f20199b10a2c16",
-  "downloaded_at": "2026-09-24T09:42:44"
+  "downloaded_at": "2026-10-11T10:40:45"
  },
  {
   "code": "603569",
@@ -470,7 +461,7 @@
   "title": "长久物流：2025年年度报告",
   "url": "http://static.cninfo.com.cn/finalpage/2026-04-23/1225154180.PDF",
   "sha1": "c4acb48686d95a31ce9102fcaced548775603792",
-  "downloaded_at": "2026-09-24T09:50:20"
+  "downloaded_at": "2026-10-11T10:40:18"
  },
  {
   "code": "603569",
@@ -486,7 +477,7 @@
   "title": "长久物流：2026年半年度报告",
   "url": "http://static.cninfo.com.cn/finalpage/2026-08-27/1225512619.PDF",
   "sha1": "4d8b5bb1dbca56a713c294ecea9de2aa40850dc5",
-  "downloaded_at": "2026-09-24T09:50:22"
+  "downloaded_at": "2026-10-11T10:40:20"
  },
  {
   "code": "603713",
@@ -502,7 +493,7 @@
   "title": "密尔克卫智能供应链服务集团股份有限公司2025年年度报告",
   "url": "http://static.cninfo.com.cn/finalpage/2026-04-10/1225090166.PDF",
   "sha1": "bdec6561701f99c3c174eca8e00212f7a40787c9",
-  "downloaded_at": "2026-09-24T09:43:06"
+  "downloaded_at": "2026-10-11T10:40:47"
  },
  {
   "code": "603713",
@@ -518,7 +509,7 @@
   "title": "密尔克卫智能供应链服务集团股份有限公司2026年半年度报告",
   "url": "http://static.cninfo.com.cn/finalpage/2026-08-14/1225472695.PDF",
   "sha1": "b5f581152c59ae8ba5f20d68c28617f77a814997",
-  "downloaded_at": "2026-09-24T09:43:08"
+  "downloaded_at": "2026-10-11T10:40:49"
  },
  {
   "code": "603871",
