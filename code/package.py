@@ -32,6 +32,7 @@ LIGHT: list[str] = [
     "code/03_build_index.py",
     "code/04_ask.py",
     "code/05_eval.py",
+    "code/06_answer_audit.py",
     "code/embedder.py",
     "code/app.py",
     "code/package.py",
@@ -45,6 +46,9 @@ LIGHT: list[str] = [
     "output/一页结论.pdf",
     "output/作业3A_报告.pdf",
     "output/eval_table.md",
+    "output/作业3A_逐题答案判定书.pdf",
+    "output/逐题答案判定书.md",
+    "output/逐题实际答复存档.md",
     "output/eval_runs.json",
     "output/eval_scores.json",
     "output/工作流程说明.md",
@@ -70,6 +74,8 @@ INTRO = """# 交付说明
 | `output/一页结论.pdf` | 一页结论单独成册（4 页），对应作业要求的「一页结论」 |
 | `output/一页结论.md` | 上述结论的 Markdown 源文件（便于修改） |
 | `output/eval_table.md` | 10 道题 × 4 种检索模式的**逐题评测台账**（含每题答案与逐句出处） |
+| `output/作业3A_逐题答案判定书.pdf` | **逐题答案判定书（77 页）**：40 份**系统实际作答原文** + 逐题判定「正确 / 部分正确 / 错误」+ 判定理由 + 证据覆盖逐项 + 公司·报告期·页码出处；含两道全景题的**逐公司取证**（已找到 / 缺失 + 归因）|
+| `output/逐题答案判定书.md`、`output/逐题实际答复存档.md` | 上述判定书与 40 份实际答复存档的 Markdown 源文件 |
 | `output/eval_runs.json` | 每题的**完整召回明细**（召回块、页码、得分），可逐条复查 |
 | `output/eval_scores.json` | 命中率汇总指标 |
 | `output/工作流程说明.md` | 六段流水线的完整说明（含所有参数取值与故障排查表） |
@@ -135,12 +141,19 @@ python code/package.py --with-data      # 额外产出 dist/作业3A_数据原�
 > ⚠ 第一层**不是**答题正确率——关键词命中不等于答对，所以第二层才是主口径。
 > 答案生成读取 Top8 召回块，故与答案层直接可比的是「义务覆盖@Top8」列。
 > 详见 `output/一页结论.md` 与 `output/eval_table.md`（含逐题义务覆盖地图、
-> 失败归因 A–G、全景题逐公司取证表）。
+> 失败归因 A–H、全景题逐公司取证表）。
 >
 > 「首次评测」= 2026-09-24 检索侧修复前的实测。`output/eval_table.md` 里那列
 > 「v1 判卷口径@Top5」（hybrid 70% / bm25 80%）是**当前检索按旧判卷规则重算**，
 > 与「首次评测」列差 10pt 属正常（差的是 Q03，词典补入跨市场术语后转命中）；
 > 两者是不同的量，台账第 1 节已并列成两列可逐格对照。
+
+**逐题答案判定书（按课程第三课 P61–63 / P90–92 补交）**：
+`output/作业3A_逐题答案判定书.pdf`（77 页）把 **40 份系统实际作答的原文**逐份摊开，
+逐份判定「正确 / 部分正确 / 错误」并写明理由，附 **公司 · 报告期 · 页码**级证据；
+两道全景题（Q01、Q02）按公司逐个列出**已找到**与**缺失**的证据。
+判定分布：**正确 7 · 部分正确 28 · 错误 5**（共 40 份）——
+答错与缺证据如实记录，未做美化。
 """
 
 
@@ -158,6 +171,8 @@ code/                     流水线脚本
   ├── 04_ask.py           ④ 混合检索（RRF + 分组召回）+ 抽取式带出处答案
   ├── 05_eval.py          ⑤ 10 题 × 4 条路线，召回层 + 答案层两层评测
   │                          （证据义务覆盖 / 失败归因 / 全景题逐公司取证）
+  ├── 06_answer_audit.py  ⑥ 读 eval_runs.json 渲染逐题答案判定书
+  │                          （实际答复原文 + 判定 + 理由 + 页码证据）
   ├── embedder.py         BGE-small-zh-v1.5 ONNX 编码器（CPU，不依赖 torch）
   ├── app.py              Flask 问答页面后端
   ├── make_report.py      Markdown → PDF 报告（Chrome 无头打印）
@@ -170,7 +185,7 @@ code/                     流水线脚本
 web/index.html            问答页面前端
 data/manifest.json        34 份报告的来源 URL / 大小 / SHA1 / 公告日
 data/chunks/stats.json    切块统计
-run_all.sh                一键跑完 7 步（幂等、断点续跑）
+run_all.sh                一键跑完 8 步（幂等、断点续跑）
 README.md                 完整说明：设计决策、评测结果、已知限制
 ```
 
@@ -178,7 +193,7 @@ README.md                 完整说明：设计决策、评测结果、已知限
 
 ```bash
 zsh code/bootstrap_deps.sh    # 装依赖
-zsh run_all.sh                # 下载 → 提取 → 建索引 → 评测 → 截图 → 出报告 → 打包
+zsh run_all.sh                # 下载 → 提取 → 建索引 → 评测 → 判定书 → 截图 → 出报告 → 打包
 ```
 
 数据（34 份财报 PDF / 切块 / 索引 / 向量模型）体积大，不在本仓库内；

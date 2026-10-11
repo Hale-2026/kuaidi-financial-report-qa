@@ -5,14 +5,15 @@
 #   cd <本仓库目录>          # 例如 clone 下来的 kuaidi-financial-report-qa/
 #   zsh run_all.sh
 #
-# 每一步都幂等（与下文 0/7 – 7/7 的步骤号一一对应）：
-#   1/7 下载      —— 已有 PDF 跳过（data/manifest.json 记录来源与校验）
-#   2/7 提取切块  —— 已有分片跳过（按报告粒度续跑）
-#   3/7 建索引    —— 已有向量分片跳过（按 500 块一片续跑）
-#   4/7 评测      —— 覆盖输出（很快）
-#   5/7 截图      —— 启服务 + 本机 Chrome 无头截图（零 npm 依赖）
-#   6/7 出报告    —— Markdown → output/*.pdf（Chrome 无头打印）
-#   7/7 打包      —— dist/作业3A_交付包_<日期>.zip（本地归档留档）
+# 每一步都幂等（与下文 0/8 – 8/8 的步骤号一一对应）：
+#   1/8 下载      —— 已有 PDF 跳过（data/manifest.json 记录来源与校验）
+#   2/8 提取切块  —— 已有分片跳过（按报告粒度续跑）
+#   3/8 建索引    —— 已有向量分片跳过（按 500 块一片续跑）
+#   4/8 评测      —— 覆盖输出（很快）
+#   5/8 判定书    —— 读 eval_runs.json 渲染逐题答案判定书（Markdown + PDF）
+#   6/8 截图      —— 启服务 + 本机 Chrome 无头截图（零 npm 依赖）
+#   7/8 出报告    —— Markdown → output/*.pdf（Chrome 无头打印）
+#   8/8 打包      —— dist/作业3A_交付包_<日期>.zip（本地归档留档）
 #
 # 可选环境变量：
 #   MAXW=3      提取并发数（默认 3；机器内存吃紧时降到 1–2）
@@ -53,7 +54,7 @@ echo "Python: $PY"
 step() { echo ""; echo "================ $* ================"; }
 tick() { echo "   … $(date '+%H:%M:%S')"; }
 
-step "0/7 环境自检（缺依赖会自动补装，仍缺则中止）"
+step "0/8 环境自检（缺依赖会自动补装，仍缺则中止）"
 check_deps() {
   WB_ROOT="$ROOT" "$PY" - <<'PYEOF'
 import importlib, os, sys
@@ -122,27 +123,31 @@ else
 fi
 tick
 
-step "1/7 下载财报（缺失的才下）"
+step "1/8 下载财报（缺失的才下）"
 "$PY" code/01_download.py || echo "!! 下载步骤有失败项（见上），继续后续步骤"
 tick
 
-step "2/7 提取文字 + 表格还原 + 切块（并发 $MAXW）"
+step "2/8 提取文字 + 表格还原 + 切块（并发 $MAXW）"
 MAXW="$MAXW" "$PY" code/02_extract_chunk.py || { echo "!! 提取失败，中止"; exit 1; }
 tick
 
-step "3/7 建向量索引 + BM25 索引（CPU 编码，耗时较长）"
+step "3/8 建向量索引 + BM25 索引（CPU 编码，耗时较长）"
 "$PY" code/03_build_index.py || { echo "!! 建索引失败，中止"; exit 1; }
 tick
 
-step "4/7 10 道题 × 4 种检索模式评测（含分组召回对照）"
+step "4/8 10 道题 × 4 种检索模式评测（含分组召回对照）"
 "$PY" code/05_eval.py || echo "!! 评测有失败项（见上）"
+tick
+
+step "5/8 生成逐题答案判定书（实际作答原文 + 判定 + 页码证据）"
+"$PY" code/06_answer_audit.py || echo "!! 判定书生成失败（需先有 output/eval_runs.json；出 PDF 还需本机 Chrome）"
 tick
 
 if [ "${SKIP_SHOT:-0}" = "1" ]; then
   echo ""
   echo "（已按 SKIP_SHOT=1 跳过截图）"
 else
-  step "5/7 起问答页面 + 截图"
+  step "6/8 起问答页面 + 截图"
   "$PY" code/app.py --port "$PORT" >output/_server.log 2>&1 &
   APP_PID=$!
   # 等端口就绪（最多 60s）
@@ -160,12 +165,12 @@ else
   kill $APP_PID 2>/dev/null
 fi
 
-step "6/7 生成 PDF 报告（一页结论 + 评测台账）"
+step "7/8 生成 PDF 报告（一页结论 + 评测台账）"
 [ -f output/一页结论.md ] || echo "   提示：output/一页结论.md 不存在，报告将只含评测台账"
 "$PY" code/make_report.py || echo "!! 报告生成失败 —— 需已装 markdown 库 + 本机 Google Chrome（具体报错见上）"
 tick
 
-step "7/7 打交付包"
+step "8/8 打交付包"
 "$PY" code/package.py || echo "!! 打包失败"
 tick
 
@@ -177,6 +182,7 @@ echo "一页结论      : $ROOT/output/一页结论.pdf"
 echo "问答页面截图 : $ROOT/shots/"
 echo "评测台账     : $ROOT/output/eval_table.md"
 echo "逐题明细     : $ROOT/output/eval_runs.json"
+echo "逐题判定书   : $ROOT/output/作业3A_逐题答案判定书.pdf"
 echo "知识库切块   : $ROOT/data/chunks/chunks.jsonl"
 echo "检索索引     : $ROOT/data/index/"
 echo ""
