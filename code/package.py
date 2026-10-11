@@ -190,7 +190,7 @@ zsh run_all.sh                # 下载 → 提取 → 建索引 → 评测 → �
 - **必需**：`pymupdf` `numpy` `onnxruntime` `tokenizers` `requests` `tqdm`
   `flask` `zhconv` `markdown`（与 `code/requirements.txt` 逐条对齐）
 - **可选**（缺失有降级方案）：`jieba`（分词 → 内置二元切分）· `rank_bm25`
-  （→ 自实现 BM25）· `scikit-learn` · `openpyxl`
+  （→ 自实现 BM25）· `scikit-learn`
 """
 
 

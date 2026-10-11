@@ -92,11 +92,11 @@ install_manually() {
 #    本机 pip 解包纯 sdist 会报
 #      EEXIST: file already exists, mkdir '.../pip-install-xxxx/<pkg>_xxxx'
 #    而这个错误会让**整条 pip 命令 abort** —— 同批里已经下载好的 wheel 包
-#    也一个都装不上（实测：混入 zhconv 后，pymupdf 等 12 个包全部没装成）。
+#    也一个都装不上（实测：混入 zhconv 后，同一批的 pymupdf 等包全部没装成）。
 #    这两个包各自单独处理（2/4、3/4），失败也只影响自己。
 WHEEL_PKGS=(
   pymupdf numpy onnxruntime tokenizers requests
-  tqdm flask markdown rank_bm25 scikit-learn openpyxl
+  tqdm flask markdown rank_bm25 scikit-learn
 )
 # 包名 → import 名（复检用）
 mod_of() {
@@ -163,7 +163,7 @@ export DEP_REPORT="$TMPDIR/missing_deps.txt"
 import importlib, os, sys
 
 mods = ["pymupdf", "jieba", "rank_bm25", "numpy", "onnxruntime", "tokenizers",
-        "requests", "tqdm", "flask", "sklearn", "openpyxl",
+        "requests", "tqdm", "flask", "sklearn",
         "markdown"]
 bad = []
 for m in mods:

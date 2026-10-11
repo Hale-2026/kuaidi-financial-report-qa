@@ -67,7 +67,7 @@ def has(m):
 
 req = ["pymupdf", "numpy", "onnxruntime", "tokenizers",
        "requests", "tqdm", "flask", "zhconv", "markdown"]
-opt = ["jieba", "rank_bm25", "sklearn", "openpyxl"]
+opt = ["jieba", "rank_bm25", "sklearn"]
 
 bad = [m for m in req if not has(m)]
 soft = [m for m in opt if not has(m)]
@@ -75,8 +75,7 @@ soft = [m for m in opt if not has(m)]
 if soft:
     note = {"jieba": "分词降级为内置二元切分",
             "rank_bm25": "BM25 改用自实现版本",
-            "sklearn": "无 TF-IDF 兜底向量",
-            "openpyxl": "无 Excel 导出"}.get
+            "sklearn": "无 TF-IDF 兜底向量"}.get
     print("可选依赖缺失（有降级方案，可继续）: "
           + " ".join(f"{m}[{note(m, '')}]" if note(m) else m for m in soft))
 
