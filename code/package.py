@@ -41,6 +41,12 @@ LIGHT: list[str] = [
     "code/shot.sh",
     "code/requirements.txt",
     "code/eval_questions.json",
+    "eval_run/README.md",
+    "eval_run/10题实际作答与判定.md",
+    "eval_run/eval_runs.json",
+    "eval_run/eval_scores.json",
+    "eval_run/eval_table.md",
+    "eval_run/逐题实际答复存档.md",
     "web/index.html",
     "output/一页结论.md",
     "output/一页结论.pdf",
@@ -89,6 +95,7 @@ INTRO = """# 交付说明
 | `web/index.html` | 问答页面前端 |
 | `data/manifest.json` | **34 份财报的下载清单**（来源平台、URL、大小、SHA1、公告日） |
 | `data/chunks/stats.json` | 切块统计（18,596 块，其中表格块 8,321） |
+| `eval_run/` | **评价程序的一次固定运行产物（也已提交到公开仓库）**：逐题实际答复、公司·报告期·**页码**证据、答案判定及理由、两道全景题逐公司取证；含人读版 `10题实际作答与判定.md` 与机器可读版 `eval_runs.json` |
 
 ## 二、原始数据不在包内（但可一键复现）
 

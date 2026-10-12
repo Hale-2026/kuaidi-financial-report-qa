@@ -1,0 +1,146 @@
+{
+ "n_questions": 10,
+ "modes": [
+  "hybrid",
+  "bm25",
+  "vector",
+  "cover"
+ ],
+ "by_mode": {
+  "hybrid": {
+   "recall_hit_top5": 0.9,
+   "recall_hit_top8": 0.9,
+   "recall_hit_top5_textonly": 0.7,
+   "oblig_total": 42,
+   "oblig_covered_recall_top5": 0.429,
+   "oblig_covered_recall_top8": 0.5,
+   "oblig_covered_answer": 0.405
+  },
+  "bm25": {
+   "recall_hit_top5": 0.9,
+   "recall_hit_top8": 0.9,
+   "recall_hit_top5_textonly": 0.8,
+   "oblig_total": 42,
+   "oblig_covered_recall_top5": 0.429,
+   "oblig_covered_recall_top8": 0.476,
+   "oblig_covered_answer": 0.357
+  },
+  "vector": {
+   "recall_hit_top5": 0.8,
+   "recall_hit_top8": 0.8,
+   "recall_hit_top5_textonly": 0.6,
+   "oblig_total": 42,
+   "oblig_covered_recall_top5": 0.357,
+   "oblig_covered_recall_top8": 0.429,
+   "oblig_covered_answer": 0.333
+  },
+  "cover": {
+   "recall_hit_top5": 1.0,
+   "recall_hit_top8": 1.0,
+   "recall_hit_top5_textonly": 0.7,
+   "oblig_total": 42,
+   "oblig_covered_recall_top5": 0.5,
+   "oblig_covered_recall_top8": 0.643,
+   "oblig_covered_answer": 0.524
+  }
+ },
+ "hybrid_by_type": {
+  "跨公司全景·数值对比": {
+   "n": 1,
+   "recall_hit_top5": 0.0
+  },
+  "跨公司全景·表格汇总": {
+   "n": 1,
+   "recall_hit_top5": 1.0
+  },
+  "跨市场·口径对比": {
+   "n": 1,
+   "recall_hit_top5": 1.0
+  },
+  "单公司·核心财务数值": {
+   "n": 1,
+   "recall_hit_top5": 1.0
+  },
+  "单公司·业务量": {
+   "n": 1,
+   "recall_hit_top5": 1.0
+  },
+  "单公司·分部收入": {
+   "n": 1,
+   "recall_hit_top5": 1.0
+  },
+  "单公司·经营概况": {
+   "n": 1,
+   "recall_hit_top5": 1.0
+  },
+  "单公司·单位经济": {
+   "n": 1,
+   "recall_hit_top5": 1.0
+  },
+  "单公司·市场份额": {
+   "n": 1,
+   "recall_hit_top5": 1.0
+  },
+  "跨公司·定性语义": {
+   "n": 1,
+   "recall_hit_top5": 1.0
+  }
+ },
+ "cover_by_type": {
+  "跨公司全景·数值对比": {
+   "n": 1,
+   "recall_hit_top5": 1.0
+  },
+  "跨公司全景·表格汇总": {
+   "n": 1,
+   "recall_hit_top5": 1.0
+  },
+  "跨市场·口径对比": {
+   "n": 1,
+   "recall_hit_top5": 1.0
+  },
+  "单公司·核心财务数值": {
+   "n": 1,
+   "recall_hit_top5": 1.0
+  },
+  "单公司·业务量": {
+   "n": 1,
+   "recall_hit_top5": 1.0
+  },
+  "单公司·分部收入": {
+   "n": 1,
+   "recall_hit_top5": 1.0
+  },
+  "单公司·经营概况": {
+   "n": 1,
+   "recall_hit_top5": 1.0
+  },
+  "单公司·单位经济": {
+   "n": 1,
+   "recall_hit_top5": 1.0
+  },
+  "单公司·市场份额": {
+   "n": 1,
+   "recall_hit_top5": 1.0
+  },
+  "跨公司·定性语义": {
+   "n": 1,
+   "recall_hit_top5": 1.0
+  }
+ },
+ "first_run_measured": {
+  "note": "2026-09-24 首轮实测：检索侧尚未修复——领域词典未补跨市场术语（票均收入 / 包裹单价），且尚无分组召回，跨公司全景题 Q01–Q03 三种模式全部未命中。",
+  "recall_hit_top5": {
+   "hybrid": 0.6,
+   "bm25": 0.7,
+   "vector": 0.6,
+   "cover": null
+  },
+  "diff_vs_v1_judged_on_current_retrieval": {
+   "hybrid": "首轮 Q03（跨市场术语）未命中；领域词典补齐后转命中 → +10pt",
+   "bm25": "同上：Q03 由未命中转为命中 → +10pt",
+   "vector": "一致：Q03 在 v1 判卷下两种口径都未命中（向量路在长表/附注上噪声大）",
+   "cover": "首轮尚无此模式（分组召回为首轮之后的改进项）"
+  }
+ }
+}

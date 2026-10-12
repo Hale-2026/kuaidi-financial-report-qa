@@ -11,6 +11,7 @@
 #   3/8 建索引    —— 已有向量分片跳过（按 500 块一片续跑）
 #   4/8 评测      —— 覆盖输出（很快）
 #   5/8 判定书    —— 读 eval_runs.json 渲染「10 题实际作答与判定」(14 页提交件) + 判定书 77 页(留档)
+#                     并把运行产物同步到 eval_run/（仓库可见，老师要求的运行产物存档）
 #   6/8 截图      —— 启服务 + 本机 Chrome 无头截图（零 npm 依赖）
 #   7/8 出报告    —— Markdown → output/*.pdf（Chrome 无头打印）
 #   8/8 打包      —— dist/作业3A_交付包_<日期>.zip（本地归档留档）
@@ -141,6 +142,12 @@ tick
 
 step "5/8 生成 10 题实际作答与判定（提交件 14 页）+ 判定书（77 页留档）"
 "$PY" code/06_answer_audit.py || echo "!! 判定书生成失败（需先有 output/eval_runs.json；出 PDF 还需本机 Chrome）"
+# 把本次运行产物同步进仓库目录 eval_run/ —— 运行产物要能在公开仓库里直接看到
+mkdir -p eval_run
+for f in "10题实际作答与判定.md" "逐题实际答复存档.md" eval_runs.json eval_scores.json eval_table.md; do
+  [ -f "output/$f" ] && cp "output/$f" "eval_run/$f"
+done
+echo "  → eval_run/ 已同步本次运行产物（10题实际作答与判定.md / eval_runs.json / eval_table.md 等）"
 tick
 
 if [ "${SKIP_SHOT:-0}" = "1" ]; then
