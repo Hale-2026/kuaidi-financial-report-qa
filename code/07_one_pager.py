@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 import tempfile
 
@@ -99,17 +100,21 @@ def company_breakdown(qid, runs, obmap):
         mark = "✅" if cov == len(items) else ("🟡" if cov else "❌")
         # 只在**已覆盖**的义务上取标准数值 —— 缺失的项不显示数字，
         # 否则读者会把标准答案误读成「系统答出来了」。
-        vals = []
+        vals, pages = [], []
         for i in sorted(items, key=lambda x: x["id"]):
             if i["status"] != "已覆盖":
                 continue
             ob = obmap.get(i["id"], {})
             if ob.get("values"):
                 vals.append(str(ob["values"][0]))
+            m = re.search(r"P(\d+)", ob.get("src") or "")
+            if m and m.group(1) not in pages:
+                pages.append(m.group(1))
         codes = sorted(gap_by_subj.get(comp, set()))
         first = min(int("".join(ch for ch in i["id"] if ch.isdigit()) or 99)
                     for i in items)
-        rows.append({"comp": comp, "mark": mark, "vals": vals, "codes": codes,
+        rows.append({"comp": comp, "mark": mark, "vals": vals, "pages": pages,
+                     "codes": codes,
                      "order": {"✅": 0, "🟡": 1, "❌": 2}[mark],
                      "seq": first})
     rows.sort(key=lambda x: (x["order"], x["seq"]))
@@ -165,9 +170,14 @@ def build_html(fs: float) -> str:
         out = []
         for x in rows:
             v = (" " + " / ".join(x["vals"])) if x["vals"] else ""
-            code = f"（{'/'.join(x['codes'])}）" if x["codes"] else ""
+            tgts = []
+            if x["pages"]:
+                tgts.append("/".join("P" + p for p in x["pages"]))
+            if x["codes"]:
+                tgts.append("/".join(x["codes"]))
+            tail = f"（{'；'.join(tgts)}）" if tgts else ""
             out.append(f"<span class='co'>{x['mark']} {esc(x['comp'])}{v} "
-                       f"<span class='dim'>{code}</span></span>")
+                       f"<span class='dim'>{tail}</span></span>")
         return "　".join(out)
 
     foot = (f"逐题明细见公开仓库 <b>{REPO_URL}</b> 的 <code>eval_run/</code>"
@@ -198,8 +208,8 @@ def build_html(fs: float) -> str:
 ③ <b>答案组装把已召回的证据丢在门外</b>（见第四节 H）。</div>
 
 <h2>三、全景覆盖　<span class="dim">两道全景题逐公司取证（对应课件 P61–63「哪条路线都只看到一角」）</span></h2>
-<div class="ln"><b>Q01 四家营业收入</b>（2026H1）：{line(q1)}</div>
-<div class="ln"><b>Q02 七家毛利率</b>（2026H1）：{line(q2)}</div>
+<div class="ln"><b>Q01 四家营业收入</b>（报告期 2026H1，单位：人民币亿元）：{line(q1)}</div>
+<div class="ln"><b>Q02 七家毛利率</b>（报告期 2026H1，单位：%）：{line(q2)}</div>
 <div class="note">单条路线各自只覆盖其中几家；改为<b>按公司分组取证</b>（分组召回）后，
 Q01 由三种单路 <b>0 命中</b> → cover <b>3/4</b> 家到位。标 (D) = 召回不足，
 标 (G) = <b>本项目切块器缺陷</b>（不是「报告没写」）。</div>
