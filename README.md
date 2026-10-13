@@ -83,7 +83,7 @@ zsh run_all.sh
 
 ## 1. 交付清单
 
-**本地跑完后会生成一个归档包 —— `dist/作业3A_交付包_<日期>.zip`（约 6.9 MB，41 个文件）。**
+**本地跑完后会生成一个归档包 —— `dist/作业3A_交付包_<日期>.zip`（约 6.8 MB，48 个文件）。**
 它由 `python code/package.py` 生成，含下表全部内容，便于一次性归档留档；
 207 MB 的财报 PDF 原件不进包（`data/manifest.json` 记录来源 URL + SHA1，
 `zsh run_all.sh` 可一键复现）。
@@ -91,7 +91,7 @@ zsh run_all.sh
 | 交付项 | 位置 | 是否进交付包 |
 |---|---|---|
 | **正式报告（32 页 PDF）** | `output/作业3A_报告.pdf` | ✅ |
-| **一页结论**（单独成册 4 页 PDF） | `output/一页结论.pdf` / `.md` | ✅ |
+| **一页结论**（**严格 1 页** PDF —— 课件 P163 点名的交付件） | `output/一页结论.pdf` / `.md` | ✅ |
 | **10 题实际作答与判定（14 页 PDF，提交件）** | `output/作业3A_10题实际作答与判定.pdf` / `.md` | ✅ |
 | 逐题答案判定书（77 页 PDF，留档备查） | `output/作业3A_逐题答案判定书.pdf` | ✅ |
 | 40 份实际答复存档（系统原文） | `output/逐题实际答复存档.md` | ✅ |
@@ -111,17 +111,18 @@ zsh run_all.sh
 一次固定运行的评测产物**。仓库含全部代码、下载清单、切块统计，以及
 `eval_run/`（逐题实际答复、公司 / 报告期 / 页码证据、答案判定及理由、两道全景题
 逐公司取证）。`.gitignore` 排除了 207 MB 的 PDF 原件、检索索引、报告 PDF 与截图
-（均可由 `run_all.sh` 一键复现），所以仓库有 **28 个跟踪文件**，带完整提交历史；
+（均可由 `run_all.sh` 一键复现），所以仓库有 **29 个跟踪文件**，带完整提交历史；
 全新 `git clone` 下来约 **1.5 MB**。想看完整项目，clone 后跑一遍 `zsh run_all.sh` 即可。
 
 **重新生成交付物：**
 
 ```bash
 V=.venv/bin
-$V/python code/make_report.py            # Markdown → output/*.pdf（Chrome 无头打印）
+$V/python code/07_one_pager.py           # 一页结论 PDF（渲染后校验必须 1 页）
+$V/python code/make_report.py            # 正式报告 PDF（结论详版 + 台账，Chrome 无头打印）
 $V/python code/06_answer_audit.py        # 10 题实际作答与判定（14 页）+ 判定书（77 页）
 $V/python code/package.py                # 交付包 + 代码仓库包
-$V/python code/package.py --code-only    # 只打纯代码仓库包（23 文件，约 112 KB）
+$V/python code/package.py --code-only    # 只打纯代码仓库包（24 文件，约 122 KB）
 $V/python code/package.py --date 20260924  # 指定包名日期（默认今天）
 $V/python code/package.py --with-data    # 额外打含 207 MB PDF 原件的数据包
 ```
@@ -141,6 +142,7 @@ homework3/                 ← 本地跑完后的完整项目（clone 出来的�
 │   ├── 05_eval.py            ⑤ 10 道题 × 4 种检索模式逐题评测（含分组召回对照）
 │   ├── 06_answer_audit.py    ⑥ 渲染 10 题实际作答与判定（14 页）+ 判定书（77 页）
 │   │                            （实际答复原文 + 正确/部分/错误判定 + 页码证据）
+│   ├── 07_one_pager.py       ⑦ 一页结论 PDF（**严格校验 1 页**，课件 P163 交付件）
 │   ├── embedder.py           BGE-small-zh-v1.5 ONNX 编码器（含兜底方案）
 │   ├── app.py                问答页面（Flask）
 │   ├── make_report.py        Markdown → PDF 报告（Chrome 无头打印）
@@ -169,8 +171,8 @@ homework3/                 ← 本地跑完后的完整项目（clone 出来的�
 ├── output/                   正式报告 PDF、评测台账、一页结论（本地生成，不进仓库）
 ├── shots/                    页面截图（9 张，本地生成，不进仓库）
 └── dist/                     归档包 —— 本地留档用（课程交付走「三行文本 + 附件」）
-    ├── 作业3A_交付包_<日期>.zip      6.9 MB（报告+台账+截图+代码+manifest）
-    └── 作业3A_代码仓库_<日期>.zip    纯源码包（23 文件，约 112 KB）
+    ├── 作业3A_交付包_<日期>.zip      6.8 MB（报告+台账+截图+代码+manifest）
+    └── 作业3A_代码仓库_<日期>.zip    纯源码包（24 文件，约 122 KB）
 ```
 
 > `data/model/`、`data/index/`、`data/pdfs/` 体积大且可复现，交付包里不含。
@@ -287,6 +289,7 @@ $V/python code/02_extract_chunk.py   # ② 提取+切块（默认 3 进程并行
 $V/python code/03_build_index.py     # ③ 建索引（BGE 编码 CPU）
 $V/python code/05_eval.py            # ⑤ 跑 10 题评测
 $V/python code/06_answer_audit.py    # ⑥ 生成 10 题实际作答与判定（14 页提交件）+ 判定书（77 页）
+$V/python code/07_one_pager.py       # ⑦ 一页结论 PDF（渲染后校验必须 1 页）
 $V/python code/app.py --port 8000    # 打开 http://127.0.0.1:8000
 
 # 命令行单题检索调试
@@ -641,6 +644,22 @@ vector 60% / cover 70%，与本表「首轮实测」列（60% / 70% / 60%）**�
   被误判成表头（**本项目提取缺陷**，已如实标注，不推给语料）
 
 答错与缺证据**如实记录，未做美化**。
+
+### 7.6 一页结论：课程 P163 要求的是「一页」，严格压到 1 页
+
+第三课 P163 对 A 方向的交付要求是「**代码仓库 + 页面截图 + 一页结论（哪类题答得好、
+哪类翻车、为什么）**」。此前 `output/一页结论.pdf` 由详版 Markdown 直接打印，实际
+**4 页**，不符合「一页」。现新增 `code/07_one_pager.py`：
+
+- 正文只保留老师点名要的几块：**主要对照结果**（4 路线 × 召回层 / 答案层）·
+  **哪类题答得好、哪类翻车**（按问题形状）· **全景覆盖**（Q01 / Q02 逐公司取证）·
+  **方法局限**（诚实清单）；
+- 数字**全部从 `eval_scores.json` / `eval_runs.json` 现算**，不手写、不复制旧文档，
+  保证与 `eval_table.md` 逐格对得上；
+- 渲染后**用 pymupdf 实测页数**：>1 页就自动降字号重排，仍超则**报错退出**
+  （不静默交一份超页文件）。实测输出 **1 页（10.8pt）**；
+- 详版结论不再打印成 PDF，改为**正式报告的「第一部分 · 结论（详版）」**；
+  `code/make_report.py` 已不再生成 `output/一页结论.pdf`，避免把它覆盖回 4 页。
 
 ---
 

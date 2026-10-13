@@ -5,8 +5,11 @@
 那套重依赖。
 
     python code/make_report.py
-    → output/作业3A_报告.pdf      （一页结论 + 逐题评测台账）
-    → output/一页结论.pdf          （只含一页结论）
+    → output/作业3A_报告.pdf      （封面 + 结论 + 逐题评测台账）
+
+⚠️ **`output/一页结论.pdf` 不在这里生成** —— 它由 `code/07_one_pager.py` 单独产出，
+因为课程第三课 P163 要求的是**严格一页**的结论；用 `一页结论.md`（详版）打印会
+变成 4 页，不符合要求。本脚本只把详版结论作为**报告的第一部分**。
 """
 from __future__ import annotations
 
@@ -101,7 +104,7 @@ COVER = """<div class="cover">
 """
 
 TITLES = {
-    "一页结论.md": "第一部分 · 一页结论",
+    "一页结论.md": "第一部分 · 结论（详版）",
     "eval_table.md": "第二部分 · 逐题评测台账",
     "工作流程说明.md": "附录 · 工作流程说明",
 }
@@ -163,11 +166,11 @@ def main() -> int:
               "前面 1–5 步（下载/提取/建索引/问答/评测）不受影响。")
         return 1
     print("生成 PDF 报告 ...")
-    if os.path.exists(os.path.join(OUT, "一页结论.md")):
-        build([("一页结论.md", None)], "一页结论.pdf")
-    else:
-        print("  跳过 一页结论.pdf —— output/一页结论.md 不存在")
-        print("  （该文件是人工撰写的结论文本，未纳入代码仓库；"
+    # 一页结论 PDF 由 code/07_one_pager.py 生成（严格一页，课件 P163 的要求）；
+    # 这里只出报告，避免把它覆盖成 4 页的详版。
+    if not os.path.exists(os.path.join(OUT, "一页结论.md")):
+        print("   提示：output/一页结论.md 不存在，报告将只含评测台账")
+        print("   （该文件是人工撰写的结论文本，未纳入代码仓库；"
               "跑完 05_eval.py 后可参照 output/eval_table.md 自拟）")
     build([("一页结论.md", TITLES["一页结论.md"]),
            ("eval_table.md", TITLES["eval_table.md"])],

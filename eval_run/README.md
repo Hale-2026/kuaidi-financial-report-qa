@@ -7,7 +7,8 @@
 # 一次固定运行的原始产物
 python code/05_eval.py           # → output/eval_runs.json（逐题实际答复明细）
 python code/06_answer_audit.py   # → output/10题实际作答与判定.md 等
-# 本目录 = 上述产物的原样存档（run_all.sh 的 6/8 步会自动同步）
+python code/07_one_pager.py      # → output/一页结论.pdf（严格校验 1 页）
+# 本目录 = 上述产物的原样存档（run_all.sh 的 5/8 步会自动同步）
 ```
 
 > 语料：34 份快递物流财报（17 家 × 2025 年报 + 2026 半年报）· 18,596 个知识块。

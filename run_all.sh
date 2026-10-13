@@ -13,7 +13,8 @@
 #   5/8 判定书    —— 读 eval_runs.json 渲染「10 题实际作答与判定」(14 页提交件) + 判定书 77 页(留档)
 #                     并把运行产物同步到 eval_run/（仓库可见，老师要求的运行产物存档）
 #   6/8 截图      —— 启服务 + 本机 Chrome 无头截图（零 npm 依赖）
-#   7/8 出报告    —— Markdown → output/*.pdf（Chrome 无头打印）
+#   7/8 出 PDF    —— 一页结论（严格 1 页，课件 P163 的交附件）+ 评测报告与台账
+#                     （Chrome 无头打印；一页结论由 07_one_pager.py 校验必须 1 页）
 #   8/8 打包      —— dist/作业3A_交付包_<日期>.zip（本地归档留档）
 #
 # 可选环境变量：
@@ -172,8 +173,9 @@ else
   kill $APP_PID 2>/dev/null
 fi
 
-step "7/8 生成 PDF 报告（一页结论 + 评测台账）"
-[ -f output/一页结论.md ] || echo "   提示：output/一页结论.md 不存在，报告将只含评测台账"
+step "7/8 生成 PDF：一页结论（严格 1 页）+ 评测报告与台账"
+# 一页结论必须先出（课件 P163 要的是「一页」）：07_one_pager.py 渲染后校验页数
+"$PY" code/07_one_pager.py || echo "!! 一页结论生成失败 —— 需本机 Google Chrome 无头打印"
 "$PY" code/make_report.py || echo "!! 报告生成失败 —— 需已装 markdown 库 + 本机 Google Chrome（具体报错见上）"
 tick
 
@@ -183,10 +185,10 @@ tick
 
 echo ""
 echo "================== 全部完成 =================="
-echo "★ 提交附件    : output/一页结论.pdf + output/作业3A_10题实际作答与判定.pdf + shots/"
+echo "★ 提交附件    : output/一页结论.pdf (1 页) + output/作业3A_10题实际作答与判定.pdf + shots/"
 echo "★ 提交说明    : dist/作业3A_提交说明_直接复制.md"
 echo "正式报告 PDF  : $ROOT/output/作业3A_报告.pdf"
-echo "一页结论      : $ROOT/output/一页结论.pdf"
+echo "一页结论      : $ROOT/output/一页结论.pdf   (提交件, 严格 1 页)"
 echo "问答页面截图 : $ROOT/shots/"
 echo "评测台账     : $ROOT/output/eval_table.md"
 echo "逐题明细     : $ROOT/output/eval_runs.json"

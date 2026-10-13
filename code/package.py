@@ -4,7 +4,7 @@
 默认打「交付包」——含报告 PDF / 评测台账 / 截图 / 代码 / 下载清单，
 把几百 MB 的 PDF 原件与索引留在本地（可由 01_download.py + manifest.json 复现）。
 
-    python code/package.py             # 交付包（约 6.9 MB）
+    python code/package.py             # 交付包（约 6.8 MB）
     python code/package.py --code-only # 只打纯代码仓库包（约 80 KB）
     python code/package.py --with-data # 额外打含原始 PDF 的数据包（约 210 MB，慢）
     python code/package.py --date 20260924   # 指定包名日期（默认今天）
@@ -33,6 +33,7 @@ LIGHT: list[str] = [
     "code/04_ask.py",
     "code/05_eval.py",
     "code/06_answer_audit.py",
+    "code/07_one_pager.py",
     "code/embedder.py",
     "code/app.py",
     "code/package.py",
@@ -79,8 +80,8 @@ INTRO = """# 交付说明
 
 | 目录 / 文件 | 内容 |
 |---|---|
-| `output/作业3A_报告.pdf` | **正式报告（32 页）**：封面 + 一页结论 + 逐题评测台账 + 义务覆盖地图 + 失败归因 + 全景题逐公司取证，直接可交 |
-| `output/一页结论.pdf` | 一页结论单独成册（4 页），对应作业要求的「一页结论」 |
+| `output/作业3A_报告.pdf` | **正式报告（32 页）**：封面 + 结论（详版）+ 逐题评测台账 + 义务覆盖地图 + 失败归因 + 全景题逐公司取证，直接可交 |
+| `output/一页结论.pdf` | **一页结论（严格 1 页）**，对应课件 P163 要求的交付件；正文数字由 `code/07_one_pager.py` 从评测结果现算并校验页数 |
 | `output/一页结论.md` | 上述结论的 Markdown 源文件（便于修改） |
 | `output/作业3A_10题实际作答与判定.pdf` | **10 题实际作答与判定（14 页，提交件）**：一题一页 —— 系统实际答复 + 网页证据卡片（含数值 + 公司·报告期·页码）+ 四路线判定 + 判定理由 + 全景题逐公司取证 |
 | `output/10题实际作答与判定.md` | 上述 14 页提交件的 Markdown 源文件 |
@@ -187,9 +188,10 @@ code/                     流水线脚本
   │                          （证据义务覆盖 / 失败归因 / 全景题逐公司取证）
   ├── 06_answer_audit.py  ⑥ 读 eval_runs.json 渲染「10 题实际作答与判定」14 页提交件
   │                          + 逐题答案判定书 77 页（留档）
+  ├── 07_one_pager.py     ⑦ 生成「一页结论」PDF（**严格校验 1 页**，课件 P163 交付件）
   ├── embedder.py         BGE-small-zh-v1.5 ONNX 编码器（CPU，不依赖 torch）
   ├── app.py              Flask 问答页面后端
-  ├── make_report.py      Markdown → PDF 报告（Chrome 无头打印）
+  ├── make_report.py      正式报告 PDF（结论详版 + 台账，Chrome 无头打印）
   ├── package.py          打交付包
   ├── bootstrap_deps.sh   依赖自检 + 补装（含 jieba/zhconv 的 sdist 兜底）
   ├── shot.sh             Chrome 无头截图
