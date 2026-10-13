@@ -127,13 +127,15 @@ def build_html(fs: float) -> str:
     per_mode, total = verdict_stats(runs)
 
     # ---- 表一：主要对照结果 ----
-    t1 = ["<table><tr><th>检索路线</th><th>召回层 @Top5</th><th>召回层 @Top8</th>"
-          "<th>答案层（义务覆盖）</th></tr>"]
+    t1 = ["<table><tr><th>检索路线</th>"
+          "<th>召回层<br><span class='dim'>证据组关键词命中</span></th>"
+          "<th>义务覆盖 @Top8<br><span class='dim'>召回段（严口径）</span></th>"
+          "<th>答案层<br><span class='dim'>实际作答</span></th></tr>"]
     for key, name, sub in MODE_ROWS:
         d = bm[key]
         t1.append(f"<tr><td><b>{name}</b><span class='dim'> · {sub}</span></td>"
                   f"<td>{pct(d['recall_hit_top5'])}</td>"
-                  f"<td>{pct(d['recall_hit_top8'])}</td>"
+                  f"<td>{pct(d['oblig_covered_recall_top8'])}</td>"
                   f"<td><b>{pct(d['oblig_covered_answer'])}</b></td></tr>")
     t1.append("</table>")
     cover = bm["cover"]
@@ -180,10 +182,10 @@ def build_html(fs: float) -> str:
 
 <h2>一、主要对照结果　<span class="dim">10 题 × 4 条路线；召回层与答案层分开计分</span></h2>
 {''.join(t1)}
-<div class="note"><b>两层口径</b>：召回层 = 证据组<b>关键词命中</b>（宽松上界，「有没有找回来」）；
-答案层 = <b>证据义务覆盖</b>（严口径，42 项：「数值对不对」<b>且</b>「是谁的、哪个口径、哪一期」）。
-答案生成读 Top8，故与答案层直接可比的是召回层 @Top8 ——
-<b>cover {pct(cover['oblig_covered_recall_top8'])} vs 答案层 {pct(cover['oblig_covered_answer'])}</b>，
+<div class="note"><b>两层口径</b>：<b>召回层</b> = 证据组<b>关键词命中</b>（宽松上界，「有没有找回来」）；
+<b>义务覆盖</b> = 42 项证据义务（「数值对不对」<b>且</b>「是谁的、哪个口径、哪一期」）在召回结果里是否落地，
+其中 <b>@Top8</b> 一列与答案层直接可比（答案生成读的正是 Top8）；<b>答案层</b> = 同一批义务在系统
+<b>实际作答</b>里的覆盖。cover 一路：<b>{pct(cover['oblig_covered_recall_top8'])} → {pct(cover['oblig_covered_answer'])}</b>，
 这 {round((cover['oblig_covered_recall_top8'] - cover['oblig_covered_answer']) * 100)}pt 就是
 「召回到了 ≠ 答出来了」的损耗。</div>
 
@@ -205,7 +207,7 @@ Q01 由三种单路 <b>0 命中</b> → cover <b>3/4</b> 家到位。标 (D) = �
 <h2>四、方法局限　<span class="dim">诚实清单</span></h2>
 <ul class="lim">
 <li><b>召回 ≠ 答对。</b>cover 答案层仅 {pct(cover['oblig_covered_answer'])}，
-低于它自己的 Top8 召回 {pct(cover['oblig_covered_recall_top8'])}；
+低于召回段的义务覆盖 @Top8 {pct(cover['oblig_covered_recall_top8'])}；
 40 份实际作答逐份判定：<b>正确 {total['正确']} · 部分正确 {total['部分正确']} · 错误 {total['错误']}</b>
 （分组召回 {per_mode['cover']['正确']}/{per_mode['cover']['部分正确']}/{per_mode['cover']['错误']}，
 向量 {per_mode['vector']['正确']}/{per_mode['vector']['部分正确']}/{per_mode['vector']['错误']}）。</li>
