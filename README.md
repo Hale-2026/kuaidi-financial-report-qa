@@ -116,7 +116,7 @@ zsh run_all.sh
 `eval_run/`（逐题实际答复、公司 / 报告期 / 页码证据、答案判定及理由、两道全景题
 逐公司取证）。`.gitignore` 排除了 207 MB 的 PDF 原件、检索索引、报告 PDF 与截图
 （均可由 `run_all.sh` 一键复现），所以仓库有 **30 个跟踪文件**，带完整提交历史；
-全新 `git clone` 下来约 **2.2 MB**。想看完整项目，clone 后跑一遍 `zsh run_all.sh` 即可。
+全新 `git clone` 下来约 **2.4 MB**。想看完整项目，clone 后跑一遍 `zsh run_all.sh` 即可。
 
 **重新生成交付物：**
 
@@ -126,7 +126,7 @@ $V/python code/07_one_pager.py           # 一页结论 PDF（渲染后校验必
 $V/python code/make_report.py            # 正式报告 PDF（结论详版 + 台账，Chrome 无头打印）
 $V/python code/06_answer_audit.py        # 10 题实际作答与判定（14 页）+ 判定书（77 页）
 $V/python code/package.py                # 交付包 + 代码仓库包
-$V/python code/package.py --code-only    # 只打纯代码仓库包（24 文件，约 122 KB）
+$V/python code/package.py --code-only    # 只打纯代码仓库包（24 文件，约 124 KB）
 $V/python code/package.py --date 20260924  # 指定包名日期（默认今天）
 $V/python code/package.py --with-data    # 额外打含 207 MB PDF 原件的数据包
 ```
@@ -177,7 +177,7 @@ homework3/                 ← 本地跑完后的完整项目（clone 出来的�
 ├── shots/                    页面截图（9 张，本地生成，不进仓库）
 └── dist/                     归档包 —— 本地留档用（课程交付走「三行文本 + 附件」）
     ├── 作业3A_交付包_<日期>.zip      6.8 MB（报告+台账+截图+代码+manifest）
-    └── 作业3A_代码仓库_<日期>.zip    纯源码包（24 文件，约 122 KB）
+    └── 作业3A_代码仓库_<日期>.zip    纯源码包（24 文件，约 124 KB）
 ```
 
 > `data/model/`、`data/index/`、`data/pdfs/` 体积大且可复现，交付包里不含。
