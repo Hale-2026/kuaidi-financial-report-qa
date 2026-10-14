@@ -8,8 +8,10 @@ data/chunks/chunks.jsonl
 data/chunks/shards/
 
 # 交付产物（由 run_all.sh / shot.sh / make_report.py / package.py 生成）
-# —— 一页结论、报告 PDF、页面截图、交付包均作为作业附件单独提交；
-#    本仓库只放源码，故一律不入库。
+# —— 报告 PDF、页面截图、交付包作为作业附件单独提交，不进仓库。
+#    ⚠️ 例外：课件第三课 P163 要求的**一页结论 PDF** 需在公开仓库可见，
+#    故 run_all.sh 的 7/8 步会把 output/一页结论.pdf 复制到仓库根目录
+#    （即 `一页结论.pdf`，不被本文件忽略）并入库。
 dist/
 output/
 shots/

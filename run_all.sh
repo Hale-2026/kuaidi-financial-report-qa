@@ -176,6 +176,11 @@ fi
 step "7/8 生成 PDF：一页结论（严格 1 页）+ 评测报告与台账"
 # 一页结论必须先出（课件 P163 要的是「一页」）：07_one_pager.py 渲染后校验页数
 "$PY" code/07_one_pager.py || echo "!! 一页结论生成失败 —— 需本机 Google Chrome 无头打印"
+# 课件 P163 的一页结论需在**公开仓库可见**：复制到仓库根目录（output/ 被忽略，根目录不被忽略）
+if [ -f output/一页结论.pdf ]; then
+  cp output/一页结论.pdf "$ROOT/一页结论.pdf"
+  echo "  → 仓库根目录 一页结论.pdf 已更新（可在公开仓库直接查看）"
+fi
 "$PY" code/make_report.py || echo "!! 报告生成失败 —— 需已装 markdown 库 + 本机 Google Chrome（具体报错见上）"
 tick
 
@@ -189,6 +194,7 @@ echo "★ 提交附件    : output/一页结论.pdf (1 页) + output/作业3A_10
 echo "★ 提交说明    : dist/作业3A_提交说明_直接复制.md"
 echo "正式报告 PDF  : $ROOT/output/作业3A_报告.pdf"
 echo "一页结论      : $ROOT/output/一页结论.pdf   (提交件, 严格 1 页)"
+echo "  └ 仓库内副本 : $ROOT/一页结论.pdf   (入库, 公开仓库可直接查看)"
 echo "问答页面截图 : $ROOT/shots/"
 echo "评测台账     : $ROOT/output/eval_table.md"
 echo "逐题明细     : $ROOT/output/eval_runs.json"
